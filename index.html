@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Arc Pro RV Repair</title>
-  <style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arc Pro RV Repair</title>
+<style>
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --bg: #0f1117; --bg2: #1a1d26; --bg3: #22263a;
@@ -103,11 +104,11 @@
       .content { padding: 0.75rem; }
       td, th { padding: 6px 6px; font-size: 12px; }
     }
-  </style>
+  
+</style>
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="login-screen">
   <div class="login-card">
     <div class="login-logo">Arc</div>
@@ -137,28 +138,23 @@
   </div>
 </div>
 
-<!-- APP -->
 <div id="app">
   <div class="app-header">
     <div>
       <div class="app-brand">Arc</div>
       <div class="app-title">Pro RV Repair</div>
     </div>
-    <button class="lock-btn" onclick="lockApp()" title="Lock">🔒</button>
+    <button class="lock-btn" onclick="lockApp()">Lock</button>
   </div>
-
-  <!-- CATEGORY TABS -->
   <div class="cat-nav">
     <div class="cat-tabs">
-      <button class="cat-tab active" onclick="showCat('roof', this)">🔺 Roof</button>
-      <button class="cat-tab" onclick="showCat('exterior', this)">🔧 Exterior</button>
-      <button class="cat-tab" onclick="showCat('interior', this)">🛋️ Interior</button>
-      <button class="cat-tab" onclick="showCat('electrical', this)">⚡ Electrical</button>
-      <button class="cat-tab" onclick="showCat('more', this)">➕ More Coming</button>
+      <button class="cat-tab active" onclick="showCat('roof', this)">&#x1F53A; Roof</button>
+      <button class="cat-tab" onclick="showCat('exterior', this)">&#x1F527; Exterior</button>
+      <button class="cat-tab" onclick="showCat('interior', this)">&#x1F6CB; Interior</button>
+      <button class="cat-tab" onclick="showCat('elec', this)">&#x26A1; Electrical</button>
+      <button class="cat-tab" onclick="showCat('more', this)">&#x2795; More Coming</button>
     </div>
   </div>
-
-  <!-- ═══ ROOF CATEGORY ═══ -->
   <div id="cat-roof" class="cat-section active">
     <div class="sub-nav">
       <div class="sub-tabs">
@@ -412,7 +408,6 @@
     </div><!-- end content -->
   </div><!-- end roof cat -->
 
-  <!-- ═══ EXTERIOR CATEGORY ═══ -->
   <div id="cat-exterior" class="cat-section">
     <div class="sub-nav">
       <div class="sub-tabs">
@@ -808,7 +803,6 @@
     </div><!-- end content -->
   </div><!-- end exterior cat -->
 
-  <!-- ═══ INTERIOR CATEGORY ═══ -->
   <div id="cat-interior" class="cat-section">
     <div class="sub-nav">
       <div class="sub-tabs">
@@ -1135,8 +1129,7 @@
     </div><!-- end content -->
   </div><!-- end interior cat -->
 
-  <!-- ═══ ELECTRICAL CATEGORY ═══ -->
-  <div id="cat-electrical" class="cat-section">
+  <div id="cat-elec" class="cat-section">
     <div class="sub-nav">
       <div class="sub-tabs">
         <button class="sub-tab active" onclick="showSub('elec','battery',this)">Coach Batteries</button>
@@ -1259,7 +1252,7 @@
           <div class="card-title">GFCI Receptacles — Diagnosis and Replacement</div>
           <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>What GFCI protects:</strong> Detects current imbalance of as little as 5mA between hot and neutral — indicating current is flowing through a person or to ground. Trips in about 1/40 of a second. Required in bathrooms, kitchens, exterior locations, and any outlet near water.</div></div>
           <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Daisy-chain effect:</strong> One GFCI outlet can protect multiple downstream outlets on the same circuit. If any outlet in the RV loses power — finding and resetting the GFCI that feeds it is always the first step. Map your GFCI circuits by tripping each one and noting which outlets lose power.</div></div>
-          <div class="tip"><div class="tip-icon">3</div><div name="tip-icon">3</div><div class="tip-text"><strong>GFCI keeps tripping:</strong> Most common cause is moisture — inside the outlet box itself from rain or condensation. Remove the cover plate and allow to dry completely, inspect for signs of water. If moisture is present on an exterior outlet — replace the weatherproof cover gasket.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>GFCI keeps tripping:</strong> Most common cause is moisture — inside the outlet box itself from rain or condensation. Remove the cover plate and allow to dry completely, inspect for signs of water. If moisture is present on an exterior outlet — replace the weatherproof cover gasket.</div></div>
           <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Converter and water heater elements:</strong> The converter and electric water heater element are common sources of current leakage that trip campground GFCI pedestals. To isolate — trip the breakers for those items inside the RV one at a time while plugged in. When the pedestal GFCI stops tripping — you found the leaky appliance.</div></div>
           <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>GFCI replacement:</strong> Use a weatherproof-rated GFCI for any exterior or bathroom location. Must be rated 15A or 20A to match the circuit. Always connect the LINE side (from breaker) and LOAD side (to downstream outlets) correctly — reversed connection defeats the protection on downstream outlets.</div></div>
           <div class="info-box">💡 GFCI outlets have a finite lifespan — typically 10–15 years. A GFCI that tests OK with the test button but won't reset or trips for no apparent reason is simply at end of life. Replacement is inexpensive and fast.</div>
@@ -1363,33 +1356,33 @@
     </div><!-- end content -->
   </div><!-- end electrical cat -->
 
-  <!-- MORE COMING SOON -->
   <div id="cat-more" class="cat-section">
     <div class="content">
       <div class="coming-soon">
-        <div class="coming-soon-icon">🔧</div>
+        <div class="coming-soon-icon">&#x1F527;</div>
         <h3>More Categories Coming Soon</h3>
         <p>Additional repair categories will be added as the app grows.</p>
-        <div style="margin-top: 1.5rem; text-align: left;">
+        <div style="margin-top:1.5rem;text-align:left;">
           <div class="card">
-            <div class="card-title">What's Already in This App</div>
+            <div class="card-title">What's Currently in This App</div>
             <table>
-              <tr><th>Category</th><th>Subtopics</th></tr>
-              <tr><td>🔺 Roof</td><td class="val">9 topics — Materials, Vents, Skylight, Satellite, WiFi, Antenna, Seams, Cracks, Ladder</td></tr>
-              <tr><td>🔧 Exterior</td><td class="val">21 topics — Propane, Electrical, Lights, Awnings, Sink, Grill, Jacks, Stabilizers, Steps, Tanks, Water</td></tr>
-              <tr><td>🛋️ Interior</td><td class="val">18 topics — Appliances, Climate, Plumbing, Toilet, Water Pump, Detectors</td></tr>
-              <tr><td>⚡ Electrical</td><td class="val">11 topics — Batteries, Lights, Converter, Inverter, Outlets, GFCI, Detectors, Solar</td></tr>
+              <tr><th>Category</th><th>Topics</th></tr>
+              <tr><td>Roof</td><td class="val">9 topics</td></tr>
+              <tr><td>Exterior</td><td class="val">21 topics</td></tr>
+              <tr><td>Interior</td><td class="val">18 topics</td></tr>
+              <tr><td>Electrical</td><td class="val">11 topics</td></tr>
             </table>
-            <p class="note">59 total subtopics with professional repair tips and YouTube reference links.</p>
+            <p class="note">59 total subtopics with professional tips and YouTube reference links.</p>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-</div><!-- end app -->
+</div>
 
 <script>
+
   const CORRECT_PIN = '6569';
   let currentPin = '';
 
@@ -1448,6 +1441,7 @@
     document.getElementById(cat + '-' + sub).classList.add('active');
     btn.classList.add('active');
   }
+
 </script>
 </body>
 </html>
