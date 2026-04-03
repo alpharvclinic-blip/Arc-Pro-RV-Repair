@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arc Pro RV Repair</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117; --bg2: #1a1d26; --bg3: #22263a;
+      --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
+      --text: #f0f2f8; --text2: #9ba3c0; --text3: #6b7494;
+      --accent: #4f8ef7; --accent2: #2d5fc4;
+      --warn: #f5a623; --danger: #e05252; --success: #3dba7e;
+      --radius: 10px; --radius-sm: 6px;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.6; }
+
+    /* LOGIN */
+    #login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
+    .login-card { background: var(--bg2); border: 1px solid var(--border2); border-radius: 16px; padding: 2.5rem 2rem; width: 100%; max-width: 360px; text-align: center; }
+    .login-logo { font-size: 13px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.4rem; }
+    .login-title { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 0.3rem; }
+    .login-sub { font-size: 13px; color: var(--text3); margin-bottom: 2rem; }
+    .pin-display { display: flex; gap: 10px; justify-content: center; margin-bottom: 1.5rem; }
+    .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border2); background: transparent; transition: all 0.15s; }
+    .pin-dot.filled { background: var(--accent); border-color: var(--accent); }
+    .pin-dot.error { background: var(--danger); border-color: var(--danger); }
+    .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1rem; }
+    .key { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; font-size: 18px; font-weight: 600; color: var(--text); cursor: pointer; transition: transform 0.1s; user-select: none; -webkit-tap-highlight-color: transparent; }
+    .key:active { transform: scale(0.96); border-color: var(--border2); }
+    .key.clear { font-size: 13px; color: var(--text3); }
+    .key.enter { background: var(--accent2); border-color: var(--accent); color: #fff; font-size: 13px; }
+    .key.enter:active { background: var(--accent); }
+    .login-error { font-size: 12px; color: var(--danger); min-height: 18px; margin-top: 0.5rem; }
+
+    /* APP */
+    #app { display: none; }
+    .app-header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0.9rem 1rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .app-brand { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+    .app-title { font-size: 15px; font-weight: 700; color: var(--text); }
+    .lock-btn { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 18px; padding: 4px; }
+
+    /* CATEGORY NAV */
+    .cat-nav { background: var(--bg2); border-bottom: 1px solid var(--border); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .cat-nav::-webkit-scrollbar { display: none; }
+    .cat-tabs { display: flex; padding: 0 0.75rem; gap: 2px; white-space: nowrap; min-width: max-content; }
+    .cat-tab { padding: 0.7rem 0.9rem; font-size: 13px; font-weight: 500; color: var(--text3); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; transition: color 0.15s, border-color 0.15s; }
+    .cat-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* SUBTOPIC NAV */
+    .sub-nav { background: var(--bg3); border-bottom: 1px solid var(--border); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 0 0.75rem; }
+    .sub-nav::-webkit-scrollbar { display: none; }
+    .sub-tabs { display: flex; gap: 6px; padding: 8px 0; white-space: nowrap; }
+    .sub-tab { padding: 5px 14px; font-size: 12px; font-weight: 500; border: 1px solid var(--border2); border-radius: 20px; background: transparent; color: var(--text3); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .sub-tab.active { background: var(--accent2); border-color: var(--accent); color: #fff; }
+
+    .content { padding: 1rem; max-width: 720px; margin: 0 auto; }
+    .cat-section { display: none; }
+    .cat-section.active { display: block; }
+    .sub-section { display: none; }
+    .sub-section.active { display: block; }
+
+    /* CARDS */
+    .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; margin-bottom: 0.9rem; }
+    .card-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .tip { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start; }
+    .tip-icon { min-width: 22px; height: 22px; border-radius: 50%; background: var(--accent2); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0; margin-top: 1px; }
+    .tip-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+    .tip-text strong { color: #7eb8ff; font-weight: 600; }
+    .warn-box { background: rgba(245,166,35,0.1); border: 1px solid rgba(245,166,35,0.25); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 12px; color: var(--warn); margin-bottom: 10px; line-height: 1.5; }
+    .danger-box { background: rgba(224,82,82,0.1); border: 1px solid rgba(224,82,82,0.25); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 12px; color: var(--danger); margin-bottom: 10px; line-height: 1.5; }
+    .info-box { background: rgba(79,142,247,0.1); border: 1px solid rgba(79,142,247,0.25); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 12px; color: var(--accent); margin-bottom: 10px; line-height: 1.5; }
+    .success-box { background: rgba(61,186,126,0.1); border: 1px solid rgba(61,186,126,0.25); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 12px; color: var(--success); margin-bottom: 10px; line-height: 1.5; }
+    .note { font-size: 11px; color: var(--text3); margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); line-height: 1.5; }
+    .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .bwarn { background: rgba(245,166,35,0.15); color: var(--warn); border: 1px solid rgba(245,166,35,0.3); }
+    .binfo { background: rgba(79,142,247,0.15); color: var(--accent); border: 1px solid rgba(79,142,247,0.3); }
+    .bdanger { background: rgba(224,82,82,0.15); color: var(--danger); border: 1px solid rgba(224,82,82,0.3); }
+    .bsuccess { background: rgba(61,186,126,0.15); color: var(--success); border: 1px solid rgba(61,186,126,0.3); }
+
+    /* VIDEO LINK */
+    .vid-link { display: flex; align-items: center; gap: 10px; background: rgba(79,142,247,0.08); border: 1px solid rgba(79,142,247,0.2); border-radius: var(--radius); padding: 10px 14px; margin-top: 12px; text-decoration: none; color: var(--accent); font-size: 13px; font-weight: 500; transition: background 0.15s; }
+    .vid-link:hover { background: rgba(79,142,247,0.15); }
+    .vid-icon { font-size: 20px; flex-shrink: 0; }
+    .vid-info { flex: 1; }
+    .vid-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
+    .vid-title { font-size: 13px; color: var(--accent); font-weight: 500; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 4px; }
+    th { text-align: left; color: var(--text3); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+    td { padding: 7px 8px; color: var(--text); border-bottom: 1px solid var(--border); vertical-align: top; font-size: 13px; }
+    tr:last-child td { border-bottom: none; }
+    .val { font-weight: 700; color: #7eb8ff; }
+
+    /* COMING SOON */
+    .coming-soon { text-align: center; padding: 3rem 1rem; color: var(--text3); }
+    .coming-soon-icon { font-size: 48px; margin-bottom: 1rem; }
+    .coming-soon h3 { font-size: 16px; font-weight: 600; color: var(--text2); margin-bottom: 0.5rem; }
+    .coming-soon p { font-size: 13px; }
+
+    @media (max-width: 480px) {
+      .content { padding: 0.75rem; }
+      td, th { padding: 6px 6px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">Arc</div>
+    <div class="login-title">Pro RV Repair</div>
+    <div class="login-sub">Enter your PIN to continue</div>
+    <div class="pin-display">
+      <div class="pin-dot" id="d0"></div>
+      <div class="pin-dot" id="d1"></div>
+      <div class="pin-dot" id="d2"></div>
+      <div class="pin-dot" id="d3"></div>
+    </div>
+    <div class="keypad">
+      <button class="key" onclick="addPin('1')">1</button>
+      <button class="key" onclick="addPin('2')">2</button>
+      <button class="key" onclick="addPin('3')">3</button>
+      <button class="key" onclick="addPin('4')">4</button>
+      <button class="key" onclick="addPin('5')">5</button>
+      <button class="key" onclick="addPin('6')">6</button>
+      <button class="key" onclick="addPin('7')">7</button>
+      <button class="key" onclick="addPin('8')">8</button>
+      <button class="key" onclick="addPin('9')">9</button>
+      <button class="key clear" onclick="clearPin()">Clear</button>
+      <button class="key" onclick="addPin('0')">0</button>
+      <button class="key enter" onclick="checkPin()">Enter</button>
+    </div>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="app-header">
+    <div>
+      <div class="app-brand">Arc</div>
+      <div class="app-title">Pro RV Repair</div>
+    </div>
+    <button class="lock-btn" onclick="lockApp()" title="Lock">🔒</button>
+  </div>
+
+  <!-- CATEGORY TABS -->
+  <div class="cat-nav">
+    <div class="cat-tabs">
+      <button class="cat-tab active" onclick="showCat('roof', this)">🔺 Roof</button>
+      <button class="cat-tab" onclick="showCat('exterior', this)">🔧 Exterior</button>
+      <button class="cat-tab" onclick="showCat('interior', this)">🛋️ Interior</button>
+      <button class="cat-tab" onclick="showCat('electrical', this)">⚡ Electrical</button>
+      <button class="cat-tab" onclick="showCat('more', this)">➕ More Coming</button>
+    </div>
+  </div>
+
+  <!-- ═══ ROOF CATEGORY ═══ -->
+  <div id="cat-roof" class="cat-section active">
+    <div class="sub-nav">
+      <div class="sub-tabs">
+        <button class="sub-tab active" onclick="showSub('roof','material',this)">Roof Material</button>
+        <button class="sub-tab" onclick="showSub('roof','vents',this)">Vents</button>
+        <button class="sub-tab" onclick="showSub('roof','skylight',this)">Skylight</button>
+        <button class="sub-tab" onclick="showSub('roof','satellite',this)">Satellite</button>
+        <button class="sub-tab" onclick="showSub('roof','wifi',this)">WiFi Hub</button>
+        <button class="sub-tab" onclick="showSub('roof','antenna',this)">TV Antenna</button>
+        <button class="sub-tab" onclick="showSub('roof','seams',this)">Seams</button>
+        <button class="sub-tab" onclick="showSub('roof','cracks',this)">Cracks</button>
+        <button class="sub-tab" onclick="showSub('roof','ladder',this)">Ladder Mount</button>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- ROOF MATERIAL -->
+      <div id="roof-material" class="sub-section active">
+        <div class="card">
+          <div class="card-title">Identifying Roof Material <span class="badge binfo">Start Here</span></div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>EPDM rubber:</strong> White on top, black backing. Feels rubbery and stretchy — stretch it and it fully returns to shape. Matte finish. Most common on trailers and older Class A/C units.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>TPO:</strong> White on both sides, sometimes fleece backing. Slightly more rigid than EPDM, semi-gloss finish. Stretch it and it does NOT fully return — leaves a slight wrinkle. Less slippery when wet.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Fiberglass:</strong> Hard, smooth, rigid surface. Common on higher-end motorhomes. Gel coat over fiberglass cloth. Can oxidize and lose shine over time.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Aluminum:</strong> Metal panels with visible seams and rivets. Rare on newer units — mostly older RVs. Heavy but durable.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Quick ID trick:</strong> Remove the interior trim ring around a roof vent or skylight and inspect the edge of the roof membrane. EPDM has a black backing, TPO is the same color on both sides.</div></div>
+          <div class="warn-box">⚠ NEVER use petroleum-based cleaners, citrus cleaners, or acetone on EPDM or TPO — causes permanent damage. Always confirm roof type before applying any product.</div>
+          <div class="info-box">💡 Do NOT seal around AC units — this can block condensation drainage and push water inside. Seal around the base flange only.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Maintenance Schedule by Material</div>
+          <table>
+            <tr><th>Material</th><th>Clean</th><th>Inspect Seals</th><th>Recoat/Reseal</th></tr>
+            <tr><td>EPDM rubber</td><td class="val">Every 3–4 months</td><td>Every 3–4 months</td><td>Every 2–3 years</td></tr>
+            <tr><td>TPO</td><td class="val">Mild soap and water</td><td>Every 6 months</td><td>As needed</td></tr>
+            <tr><td>Fiberglass</td><td class="val">Annual with wax</td><td>Annual</td><td>Annual seam reseal</td></tr>
+            <tr><td>Aluminum</td><td class="val">As needed</td><td>Annual</td><td>Check rivets and seams</td></tr>
+          </table>
+          <p class="note">Inspect immediately after any severe weather event regardless of schedule. Always apply sealant between 50–90°F on a dry day with no rain forecast for 24–48 hours.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">Product Compatibility Quick Reference</div>
+          <table>
+            <tr><th>Roof Type</th><th>Use</th><th>Never Use</th></tr>
+            <tr><td>EPDM</td><td>Dicor self-leveling lap sealant, EPDM patch kit, EternaBond, butyl tape</td><td>Silicone, petroleum products, citrus cleaners</td></tr>
+            <tr><td>TPO</td><td>TPO-specific primer + patch tape, isopropyl alcohol to clean</td><td>Standard EPDM sealants, silicone</td></tr>
+            <tr><td>Fiberglass</td><td>Epoxy resin, polyester filler, fiberglass cloth, gelcoat</td><td>Rubber roof sealants</td></tr>
+            <tr><td>Aluminum</td><td>Metal-approved sealant, Dicor metal roof coating, seam tape</td><td>Rubber roof coatings</td></tr>
+          </table>
+          <p class="note">Silicone caulk is a common mistake on RV roofs — nothing bonds properly over silicone residue, including more silicone. If silicone was used previously, it must be completely removed before any proper repair.</p>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+roof+material+identification+EPDM+TPO" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div>
+          <div class="vid-info">
+            <div class="vid-label">YouTube Search</div>
+            <div class="vid-title">RV Roof Material Identification — EPDM vs TPO</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- VENTS -->
+      <div id="roof-vents" class="sub-section">
+        <div class="card">
+          <div class="card-title">Vent Inspection & Resealing</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Inspect first:</strong> Check vent cover for cracks, warping, or UV damage. Inspect the flange where vent meets roof membrane for cracked, brittle, or missing sealant.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Remove old sealant:</strong> Use a plastic scraper only — metal tools can cut the membrane. Soften stubborn sealant with a heat gun on low setting held 10–12 inches away.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Apply butyl tape first:</strong> Place butyl tape over all screw holes around the vent flange before applying lap sealant. This seals the fastener penetrations.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Self-leveling sealant:</strong> Apply a continuous bead of Dicor self-leveling lap sealant completely around the vent flange. Smooth with a putty knife to eliminate air pockets.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Cure time:</strong> Allow 24–48 hours to fully cure before reinstalling vent cover. Test after next rain event to confirm no leaks.</div></div>
+          <div class="warn-box">⚠ Vent flanges are one of the most common leak points on any RV. Check and reseal annually minimum — more often in Maine's freeze/thaw cycles.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Vent Cover Replacement</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Measure correctly:</strong> Standard vents are 14" x 14" but verify yours — some older units use 13" x 14". Measure the opening not the cover.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Replace the insert separately:</strong> The inner dome/insert can often be replaced without removing the outer shell. Check if only the dome is cracked before pulling the whole unit.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Full replacement:</strong> Remove all screws around perimeter — they are hidden under sealant. Once out, install new unit with fresh butyl tape under flange, then lap sealant over all screws and edges.</div></div>
+          <div class="success-box">✓ Pro tip: Consider upgrading to a Maxxair or Fan-Tastic vent cover — the raised design dramatically reduces rain intrusion and is a good upsell for customers with chronic vent leaks.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+roof+vent+replace+reseal+repair" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div>
+          <div class="vid-info">
+            <div class="vid-label">YouTube Search</div>
+            <div class="vid-title">RV Roof Vent Replacement and Resealing</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- SKYLIGHT -->
+      <div id="roof-skylight" class="sub-section">
+        <div class="card">
+          <div class="card-title">Skylight Inspection & Reseal</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Inspect from inside first:</strong> Remove interior trim ring and look for water staining, delamination, or damaged membrane around the opening edge.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Inspect from roof:</strong> Look for cracked or yellowed dome, gaps in sealant at all four corners, loose or missing screws. Corners are the highest-failure spots.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Reseal procedure:</strong> Use plastic scraper to remove all old sealant. Clean with mineral spirits then isopropyl alcohol. Allow to fully dry. Apply fresh self-leveling lap sealant completely around perimeter — no gaps.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Cover old screw holes:</strong> Run a bead of sealant over every old screw hole before positioning new skylight. Press skylight down — sealant should squeeze up through screw holes confirming a seal.</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Skylight Replacement</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Remove screws first:</strong> Use a screw gun — screws are tight and numerous. Remove sealant from around each screw head before attempting removal.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Clean the opening:</strong> Scrape all old sealant with a plastic putty knife. Use mineral spirits for residue — use sparingly on non-fiberglass roofs.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Match the size exactly:</strong> Skylights are not universal. Check manufacturer, measure opening, and order the correct replacement unit before removing old one.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Double-stick tape trick:</strong> Apply double-sided butyl tape to the flange of the new skylight before setting it in place. This acts as a primary seal under the sealant bead.</div></div>
+          <div class="warn-box">⚠ Cracked skylights are a common hidden leak source. A yellowed or crazed dome may look okay but let UV-degraded sealant fail silently. When in doubt replace the whole unit — domes are inexpensive.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+skylight+replacement+reseal+repair" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div>
+          <div class="vid-info">
+            <div class="vid-label">YouTube Search</div>
+            <div class="vid-title">RV Skylight Replacement and Resealing</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- SATELLITE -->
+      <div id="roof-satellite" class="sub-section">
+        <div class="card">
+          <div class="card-title">Satellite Dish Mount — Leak Prevention & Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Mount feet are the leak point:</strong> Satellite dishes mount on multiple feet bolted through the roof. Each bolt hole is a potential entry point. Inspect all feet for sealant condition.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Reseal procedure:</strong> Remove any old cracked Dicor around each foot. Clean area with isopropyl alcohol. Apply fresh self-leveling Dicor around every foot and over every fastener head.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Cable entry points:</strong> The coax cable penetration through the roof is a separate leak source. Inspect and reseal the rubber boot or cable entry gland. Apply Dicor over the boot perimeter.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Removing a dome satellite:</strong> Open clamshell, unscrew from mounting feet, remove dome. Work mounting feet free gently. Remove old Dicor puddle, clean area, apply EternaBond patches over each mount location — 6" diameter minimum.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Patching abandoned holes:</strong> Fill screw holes with same-size flat-head stainless screws bedded in Dicor, then overlay with Dicor. Or use EternaBond patch over the entire area for a permanent seal.</div></div>
+          <div class="info-box">💡 Starlinkand other flat antenna mounts are increasingly common. Same principle — inspect every mounting fastener and cable entry annually. Self-leveling Dicor on all fasteners after installation.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+satellite+dish+mount+roof+seal+install" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div>
+          <div class="vid-info">
+            <div class="vid-label">YouTube Search</div>
+            <div class="vid-title">RV Satellite Dish Mount Sealing and Installation</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- WIFI HUB -->
+      <div id="roof-wifi" class="sub-section">
+        <div class="card">
+          <div class="card-title">WiFi Hub / Cell Booster Mount</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Common units:</strong> WeBoost, Winegard ConnecT, and similar cell boosters have roof-mounted antennas. Inspect all mounting screws and cable entry points for sealant failure.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Cable entry boot:</strong> Most WiFi/cell antennas use a rubber grommet or boot where the cable penetrates the roof. These are notorious leak points — inspect closely and reseal around the entire base with Dicor.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Mounting plate:</strong> Seal around the entire perimeter of the mounting plate with self-leveling Dicor. Apply liberally — a generous bead is better than a thin one that can crack.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Flat antenna units:</strong> Newer flat-profile WiFi antennas mount flush to the roof. Inspect all four corners and any cable conduit or grommet. Standard Dicor resealing applies.</div></div>
+          <div class="success-box">✓ Pro tip: When resealing any roof-mounted electronic, take a photo of the unit before and after for your job record. Helpful if a customer claims a leak developed after your visit.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+WiFi+booster+roof+mount+antenna+seal" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div>
+          <div class="vid-info">
+            <div class="vid-label">YouTube Search</div>
+            <div class="vid-title">RV WiFi Booster Roof Mount and Sealing</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- TV ANTENNA -->
+      <div id="roof-antenna" class="sub-section">
+        <div class="card">
+          <div class="card-title">TV Antenna — Leak Diagnosis & Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Most common leak point:</strong> The crank-up batwing antenna (Winegard) has a shaft that goes through the roof to an interior crank handle. The shaft O-ring degrades and the base sealant cracks over time.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Check the O-ring first:</strong> Water dripping from the interior crank is often an O-ring failure — not a roof sealant issue. Remove the crank, inspect the O-ring on the shaft, and replace if dried/cracked.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Reseal the base:</strong> Clean existing sealant with mineral spirits then alcohol. Apply fresh Dicor self-leveling sealant around the entire antenna base perimeter. Generous application.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Rubber boot / coax entry:</strong> The coax cable entry has a rubber boot. These dry out and pull away from the base. Reseal around the boot with Dicor or use EternaBond for a long-term fix.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Antenna replacement:</strong> If removing old crank-up, consider upgrading to a Winegard Sensar or similar low-profile non-crank unit. Eliminates the shaft penetration entirely and gets better reception.</div></div>
+          <div class="warn-box">⚠ Do NOT use silicone on antenna bases. If silicone has been used previously, remove it completely before applying Dicor or EternaBond — nothing bonds to silicone residue.</div>
+          <div class="info-box">💡 Lube the antenna mechanism annually with silicone spray — not WD-40. A dry mechanism causes users to force the crank which stresses the base seal.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+TV+antenna+leak+repair+reseal+Winegard" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div>
+          <div class="vid-info">
+            <div class="vid-label">YouTube Search</div>
+            <div class="vid-title">RV TV Antenna Leak Repair and Resealing</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- SEAMS -->
+      <div id="roof-seams" class="sub-section">
+        <div class="card">
+          <div class="card-title">Seam Inspection & Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Where seams fail most:</strong> Front and rear cap edges, where roof meets side walls, and anywhere the membrane laps over a roof edge or trim piece. Thermal expansion constantly works seams loose.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Remove all old sealant:</strong> Never apply new sealant over old cracked sealant — it will fail quickly. Use a plastic scraper to remove all old material. A heat gun on low helps soften stubborn sealant.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Clean thoroughly:</strong> Wipe down with mineral spirits then isopropyl alcohol. Allow to fully dry — any moisture under new sealant causes adhesion failure.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Self-leveling for flat seams:</strong> Apply Dicor self-leveling lap sealant on horizontal surfaces. It flows into the seam naturally and levels off. Apply a continuous bead — no breaks.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Non-sag for vertical seams:</strong> Use Dicor non-sag sealant on vertical surfaces and edges. Self-leveling sealant will run off vertical surfaces.</div></div>
+          <div class="tip"><div class="tip-icon">6</div><div class="tip-text"><strong>EternaBond for long-term:</strong> For permanent seam repairs, EternaBond tape over clean surface provides 20+ year bond. Clean with mineral spirits first — EternaBond will NOT stick to silicone residue.</div></div>
+          <div class="warn-box">⚠ TPO seams are heat-welded from the factory — standard lap sealant doesn't bond to TPO the same way as EPDM. Use TPO-compatible products and primer for TPO seam repairs.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Reseal Schedule</div>
+          <table>
+            <tr><th>Location</th><th>Frequency</th></tr>
+            <tr><td>All roof seams and edges</td><td class="val">Annually minimum</td></tr>
+            <tr><td>Around all roof penetrations</td><td class="val">Every 6 months</td></tr>
+            <tr><td>After severe weather</td><td class="val">Inspect immediately</td></tr>
+            <tr><td>Full roof reseal/recoat</td><td class="val">Every 10 years</td></tr>
+          </table>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+roof+seam+repair+Dicor+lap+sealant" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div>
+          <div class="vid-info">
+            <div class="vid-label">YouTube Search</div>
+            <div class="vid-title">RV Roof Seam Repair with Dicor Lap Sealant</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- CRACKS -->
+      <div id="roof-cracks" class="sub-section">
+        <div class="card">
+          <div class="card-title">Roof Cracks & Membrane Repair by Type</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>EPDM crack/tear repair:</strong> Clean with approved solvent, apply EPDM primer, cut patch 2 inches larger than damaged area on all sides. Apply compatible adhesive to patch and roof surface, wait until tacky, press patch firmly rolling out all air bubbles. Seal edges with self-leveling lap sealant.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>TPO crack repair:</strong> Clean with isopropyl alcohol, apply TPO-specific primer, apply TPO patch tape or use heat gun to weld patch for factory-quality bond. Standard EPDM sealant will not properly bond to TPO.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Fiberglass crack repair:</strong> Sand edges around crack to remove gelcoat. Apply epoxy resin into crack, embed fiberglass cloth layer, apply additional resin layers, allow to cure, sand smooth, finish with matching gelcoat.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Hairline cracks:</strong> On EPDM and TPO — apply self-leveling lap sealant over hairline cracks as a first response. Monitor closely and patch properly if crack grows.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Soft spots:</strong> Soft or spongy areas indicate water has penetrated to the substrate. This is a bigger job — decking may be rotted and may require membrane removal and subfloor repair before re-roofing.</div></div>
+          <div class="danger-box">⛔ Soft spots or delamination need immediate attention — water damage progresses fast in RV roofs. Document with photos and advise customer in writing if they decline repair.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Leak Location Method</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text">Start inside — find ceiling staining or wet spots. Note location relative to roof features above.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text">Remember: water travels. Entry point on roof may be several feet from where it shows inside. Work uphill from interior damage location.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text">Use garden hose test — have someone inside watching while you run water section by section on roof. Pinpoints entry zone.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text">Musty smell indicates existing moisture/mold — water has been entering for some time even if no visible staining yet.</div></div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+roof+crack+repair+EPDM+patch+membrane" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div>
+          <div class="vid-info">
+            <div class="vid-label">YouTube Search</div>
+            <div class="vid-title">RV Roof Crack and Membrane Patch Repair</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- LADDER MOUNT -->
+      <div id="roof-ladder" class="sub-section">
+        <div class="card">
+          <div class="card-title">Ladder Mount Leak Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Why ladders leak:</strong> Ladder mounts bolt through the rear cap or roof edge. Vibration from road travel constantly works the fasteners and surrounding sealant loose. Often overlooked during routine inspections.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Inspect all mount points:</strong> Check every ladder bracket fastener location — top and bottom of each side rail. Look for cracked or missing sealant, rust staining, or surface separation around mount plates.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Reseal procedure:</strong> Remove old sealant with plastic scraper and mineral spirits. Apply fresh butyl tape under any mount plate being resealed. Apply self-leveling Dicor around all fastener heads and mount plate edges.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Check fastener tightness:</strong> Loose mounting bolts accelerate sealant failure. Tighten all ladder mount hardware before resealing. Use stainless steel hardware as replacements if existing hardware is rusted.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>EternaBond over mount plates:</strong> For a long-term solution, run EternaBond tape across the entire mount plate and several inches onto the surrounding roof material after resealing with Dicor.</div></div>
+          <div class="info-box">💡 Ladder mount leaks often show up as water intrusion at the rear interior wall or ceiling near the back cap — customers may not connect the leak to the ladder until you show them.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+ladder+mount+leak+repair+reseal" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div>
+          <div class="vid-info">
+            <div class="vid-label">YouTube Search</div>
+            <div class="vid-title">RV Ladder Mount Leak Repair and Resealing</div>
+          </div>
+        </a>
+      </div>
+
+    </div><!-- end content -->
+  </div><!-- end roof cat -->
+
+  <!-- ═══ EXTERIOR CATEGORY ═══ -->
+  <div id="cat-exterior" class="cat-section">
+    <div class="sub-nav">
+      <div class="sub-tabs">
+        <button class="sub-tab active" onclick="showSub('exterior','proptank',this)">Propane Tanks</button>
+        <button class="sub-tab" onclick="showSub('exterior','proplines',this)">Propane Lines</button>
+        <button class="sub-tab" onclick="showSub('exterior','outelec',this)">Outdoor Electrical</button>
+        <button class="sub-tab" onclick="showSub('exterior','coachlights',this)">Coach Lights</button>
+        <button class="sub-tab" onclick="showSub('exterior','awningman',this)">Awning Manual</button>
+        <button class="sub-tab" onclick="showSub('exterior','awningelec',this)">Awning Electric</button>
+        <button class="sub-tab" onclick="showSub('exterior','outsink',this)">Outdoor Sink</button>
+        <button class="sub-tab" onclick="showSub('exterior','outgrill',this)">Outdoor Grill</button>
+        <button class="sub-tab" onclick="showSub('exterior','leveljacks',this)">Leveling Jacks</button>
+        <button class="sub-tab" onclick="showSub('exterior','stabman',this)">Stabilizers Manual</button>
+        <button class="sub-tab" onclick="showSub('exterior','stabelec',this)">Stabilizers Electric</button>
+        <button class="sub-tab" onclick="showSub('exterior','stepsman',this)">Steps Manual</button>
+        <button class="sub-tab" onclick="showSub('exterior','stepselec',this)">Steps Electric</button>
+        <button class="sub-tab" onclick="showSub('exterior','blacktank',this)">Black Tank</button>
+        <button class="sub-tab" onclick="showSub('exterior','blackvalve',this)">Black Tank Valve</button>
+        <button class="sub-tab" onclick="showSub('exterior','graytank',this)">Gray Tank</button>
+        <button class="sub-tab" onclick="showSub('exterior','grayvalve',this)">Gray Tank Valve</button>
+        <button class="sub-tab" onclick="showSub('exterior','citywater',this)">City Water Intake</button>
+        <button class="sub-tab" onclick="showSub('exterior','lowpoint',this)">Low Point Drains</button>
+        <button class="sub-tab" onclick="showSub('exterior','whtank',this)">Water Heater Tank</button>
+        <button class="sub-tab" onclick="showSub('exterior','whtankless',this)">Water Heater Tankless</button>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- PROPANE TANKS -->
+      <div id="exterior-proptank" class="sub-section active">
+        <div class="card">
+          <div class="card-title">DOT vs ASME Tanks — Know the Difference <span class="badge binfo">Critical</span></div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>DOT cylinders</strong> are portable tanks (20 lb, 30 lb) on travel trailers and 5th wheels. Must be recertified 10 years from manufacture date stamped on collar, then every 5 years after. Format: month/year (e.g. 06/15 = June 2015).</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>ASME tanks</strong> are permanently mounted on motorhomes. Built with thicker steel — no recertification required. Visually inspect annually for damage. If a zigzag rust line appears on the tank shell — that is a crack — replace immediately.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>DOT recertification periods:</strong> Visual inspection = 5 more years. Proof pressure test = 7 more years. Volumetric expansion test = 12 more years. Cost typically $35–$60 at a bulk propane distributor.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Automatic fail conditions:</strong> Dents, cracks, rust pitting, fire damage, missing foot ring, broken valve collar, leaking or defective OPD valve, missing date stamp.</div></div>
+          <div class="warn-box">⚠ Propane fill stations are required to inspect DOT tanks before filling. An expired or condemned tank cannot be legally refilled. Always check the date stamp before visiting a customer — expired tanks are a common service call.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Tank Inspection Procedure</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text">Inspect exterior for dents, bulges, cracks, deep rust, and fire damage. Light surface rust is normal — heavy rust or pitting is a fail.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text">Check the protective ring around the service valve — bent or broken means the valve is unprotected. Check valve collar on ASME tanks for mounting hardware condition.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text">Inspect the bottom of DOT cylinders — sitting in the mounting tray collects moisture. This is the most common rust location.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text">Check OPD valve operation (the triangular handwheel) — should open and close smoothly. A stuck OPD is a common reason tanks are rejected at fill stations.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text">Inspect the regulator — replace every 10–15 years. Check rubber pigtail hoses for cracks, stiffness, and UV damage. Replace hoses every 5–10 years regardless of condition.</div></div>
+          <div class="info-box">💡 Pro tip: Replace pigtail hoses in pairs. Sell the service to customers as a package — tank inspection + pigtail replacement + bubble test. High value, low parts cost, fast job.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+propane+tank+inspection+DOT+ASME+recertification" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Propane Tank Inspection and Recertification</div></div>
+        </a>
+      </div>
+
+      <!-- PROPANE LINES -->
+      <div id="exterior-proplines" class="sub-section">
+        <div class="card">
+          <div class="card-title">Propane Leak Detection — Bubble Test Method</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Safety first:</strong> Turn off all appliances before testing. Never use an open flame to detect propane leaks. Ventilate the area first.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Bubble test:</strong> Mix 50/50 dish soap and water in a spray bottle. With tank valve slowly opened and all appliances off, spray generously over all connections, fittings, hose joints, regulator, and valve connections. Any bubbles = leak found.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Regulator diaphragm test:</strong> Find the small vent hole on the regulator. Place finger over the hole and apply soapy water. Growing bubbles mean the diaphragm has failed — replace regulator.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Pressure drop test (NFPA 1192):</strong> Connect manometer to system. Charge to 11 inches water column (WC). Close tank valve. Bleed pressure down to 8 inches WC. Wait 3 minutes — pressure must not drop. Any drop indicates a leak. This is the official test standard.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Excess flow valve:</strong> If appliances won't light after tank connection, the excess flow valve may have tripped. Close tank valve, wait 5 minutes, reopen VERY SLOWLY — opens to fully open position. Never crack the valve quickly.</div></div>
+          <div class="danger-box">⛔ Never use regular Teflon tape on propane fittings — use only yellow gas-rated pipe thread sealant or yellow PTFE tape specifically marked for gas lines.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Regulator Troubleshooting</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>System pressure spec:</strong> Normal operating pressure is 11 inches WC. Acceptable range is 11–14 inches WC. Outside this range — inspect and adjust or replace regulator.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Humming regulator:</strong> Low-temperature operation can cause regulator diaphragm humming. Common in cold weather. Usually means regulator is aging — replacement recommended.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Yellow or orange flame:</strong> Indicates incomplete combustion — could be regulator pressure too low, dirty burner orifice, or insufficient air. Healthy propane flame is blue.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Burner pops when shutting off:</strong> Pressure slightly high or damaged burner. Check regulator output pressure first, then inspect individual burner.</div></div>
+          <div class="info-box">💡 A manometer is essential for professional propane system work. A quality digital manometer runs $40–$80 and pays for itself on the first pressure drop test job.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+propane+leak+test+regulator+repair+bubble+test" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Propane Leak Detection and Regulator Repair</div></div>
+        </a>
+      </div>
+
+      <!-- OUTDOOR ELECTRICAL -->
+      <div id="exterior-outelec" class="sub-section">
+        <div class="card">
+          <div class="card-title">Outdoor Receptacle Diagnosis</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Most common cause:</strong> Exterior outlets are almost always protected by an interior GFCI outlet — usually in the bathroom or kitchen. Check and reset that GFCI first before doing anything else.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>GFCI mapping:</strong> Multiple outlets can share one GFCI circuit. Use a outlet tester to map which outlets lose power when you trip each GFCI. Exterior outlets are frequently downstream of interior GFCIs.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>If GFCI keeps tripping:</strong> Disconnect all devices from all protected outlets. If it holds — load was tripping it. If it still trips immediately — there is a fault in the wiring or a downstream outlet is defective.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Moisture is the #1 cause:</strong> Exterior outlets are exposed to rain and condensation. Moisture inside the outlet box causes nuisance tripping. Dry out completely, check cover gasket condition and replace if hardened or missing.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Outlet cover replacement:</strong> Always use an in-use weatherproof cover (bubble cover) on exterior outlets — allows cords to plug in while maintaining weather seal. Standard flip covers don't seal with a cord plugged in.</div></div>
+          <div class="tip"><div class="tip-icon">6</div><div class="tip-text"><strong>Replacing the outlet:</strong> Must use a weatherproof rated GFCI outlet for exterior locations. Standard indoor GFCI not rated for outdoor exposure. Turn off breaker and verify power is off with multimeter before opening box.</div></div>
+          <div class="warn-box">⚠ NEVER work on outlets with shore power connected. Always disconnect from campground pedestal and verify power is off at the outlet with a multimeter before touching any wiring.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+outdoor+GFCI+outlet+repair+replace+exterior" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Exterior GFCI Outlet Repair and Replacement</div></div>
+        </a>
+      </div>
+
+      <!-- COACH LIGHTS -->
+      <div id="exterior-coachlights" class="sub-section">
+        <div class="card">
+          <div class="card-title">Coach Light Diagnosis and Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>12V DC system:</strong> Coach lights run on 12-volt DC power from the house battery through the converter. If all lights are out check the house battery charge and converter output first.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Check fuses first:</strong> Coach lights are typically protected by individual fuses in the 12V fuse panel — not circuit breakers. Check all low-voltage fuses. Fuse panel is often near the converter or in a basement compartment.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Individual light out:</strong> Check bulb first. Coach lights commonly use 1156, 1157, or wedge base bulbs. LED upgrades are direct drop-in replacements and dramatically reduce current draw.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Moisture intrusion:</strong> Coach light housings are notorious leak points. Remove the light fixture, inspect the mounting seal and caulk around all edges. Apply non-sag Dicor or butyl tape under the base before reinstalling.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Corrosion at socket:</strong> Exterior light sockets corrode from moisture exposure. Clean contacts with electrical contact cleaner. Dielectric grease on bulb base prevents future corrosion.</div></div>
+          <div class="tip"><div class="tip-icon">6</div><div class="tip-text"><strong>Running lights on the roof edge:</strong> Marker lights are notorious leak sources. If a light is out — pull the lens, check the bulb, but also inspect the mounting seal around the entire light base for water intrusion into the sidewall.</div></div>
+          <div class="success-box">✓ Pro tip: LED retrofit bulbs for coach lights are a great upsell — lower draw extends battery life, much longer lifespan, and brighter output. Easy sell to customers who camp without hookups.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+coach+lights+repair+replace+LED+upgrade" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Coach Lights Repair and LED Upgrade</div></div>
+        </a>
+      </div>
+
+      <!-- AWNING MANUAL -->
+      <div id="exterior-awningman" class="sub-section">
+        <div class="card">
+          <div class="card-title">Manual Awning — Operation, Adjustment and Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Tension adjustment:</strong> Manual awnings have a tension knob on each end. If the fabric sags in the middle or flaps in wind — increase tension. If the awning is hard to crank — decrease tension. Adjust both ends equally.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Won't retract fully:</strong> Usually caused by debris in the roller tube or a bent support arm. Check the roller tube ends for blockage and inspect arm alignment. Support arms must be perfectly parallel for smooth retraction.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Fabric replacement:</strong> Measure roller tube length accurately before ordering. Most fabrics are sold by length and width. Installation requires rolling the new fabric tightly onto the tube — use a heat gun slightly to help tension.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Rafter arm adjustment:</strong> A-style awnings have adjustable rafter pitch arms. Ensure both sides are set at the same angle for proper water runoff. Water should shed away from the RV — never pool toward it.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Travel latch:</strong> Always verify the travel latch engages properly after retracting. A latch that doesn't click can allow the awning to deploy at highway speed — catastrophic damage results.</div></div>
+          <div class="warn-box">⚠ Never leave a manual awning extended in rain or wind without the stabilizer straps deployed. Pooled water weight and wind load can snap support arms and tear mounting hardware from the sidewall.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+manual+awning+repair+adjustment+fabric+replacement" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Manual Awning Repair and Adjustment</div></div>
+        </a>
+      </div>
+
+      <!-- AWNING ELECTRIC -->
+      <div id="exterior-awningelec" class="sub-section">
+        <div class="card">
+          <div class="card-title">Electric Awning — Diagnosis and Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Won't extend or retract:</strong> Check 12V fuse panel first — electric awnings draw significant current and often have a dedicated fuse. Next check battery voltage — awning motor requires minimum 10.5V to operate.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Lippert/Carefree systems:</strong> Most common brands. Check for error codes on the wall switch display. Beep patterns indicate specific faults — consult the brand-specific manual for fault codes.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Motor test:</strong> Apply 12V directly to the motor leads to determine if the motor is functional or if the fault is in the control board or switch wiring. Motors are expensive — verify before replacing.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Manual override:</strong> All electric awnings have a manual override for emergencies. Usually a hex bolt on the roller tube end. Always show customers the override location — a stranded awning in bad weather is a real emergency.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Wind sensor:</strong> Many newer awnings have automatic wind retraction sensors. If the awning keeps retracting on its own in calm conditions — the wind sensor may be faulty or the sensitivity needs adjustment.</div></div>
+          <div class="tip"><div class="tip-icon">6</div><div class="tip-text"><strong>Common wiring failure:</strong> The wire harness runs through the awning arm and flexes every time the awning moves. Wire fatigue at flex points is very common — inspect harness closely for breaks especially at arm joints.</div></div>
+          <div class="info-box">💡 Lippert OneControl app can diagnose many Lippert awning issues wirelessly. If the customer has a Lippert system it is worth checking app connectivity before doing hands-on diagnosis.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+electric+awning+repair+troubleshoot+motor+Lippert+Carefree" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Electric Awning Troubleshoot and Repair</div></div>
+        </a>
+      </div>
+
+      <!-- OUTDOOR SINK -->
+      <div id="exterior-outsink" class="sub-section">
+        <div class="card">
+          <div class="card-title">Outdoor Sink — Repair and Maintenance</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>No water flow:</strong> Check that the outdoor sink shutoff valve (usually in the wet bay or storage compartment) is open. Many owners forget this valve exists after winterization.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Faucet drips or leaks:</strong> Outdoor faucets use standard plumbing cartridges or packing — same repair as indoor. Shut off water supply, disassemble the faucet head, replace O-rings or cartridge. SharkBite fittings make line repairs easy in tight spaces.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Drain issues:</strong> Outdoor sink drains directly to gray tank or drains onto the ground depending on the unit. If draining to ground — verify this is allowed at the campsite. If gray tank — check for air lock in drain line.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Freeze damage:</strong> Outdoor sinks are highly vulnerable to freeze damage in Maine winters. If customer reports no flow after first freeze — inspect all exposed lines and faucet body for cracks before turning water back on.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Cabinet door seals:</strong> The cabinet enclosing the outdoor sink is a common source of water damage and rodent entry. Inspect door seals and corner caulk annually — replace foam weatherstripping if compressed or missing.</div></div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+outdoor+sink+faucet+repair+replacement" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Outdoor Sink Faucet Repair</div></div>
+        </a>
+      </div>
+
+      <!-- OUTDOOR GRILL -->
+      <div id="exterior-outgrill" class="sub-section">
+        <div class="card">
+          <div class="card-title">Outdoor Grill Connection — Maintenance and Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Quick connect fittings:</strong> Most RV outdoor grills use a proprietary quick-disconnect on the exterior wall. These fittings use a spring-loaded check valve that can stick or fail — perform bubble test annually.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Weak flame or won't light:</strong> Check the quick-connect fitting is fully engaged. Partially seated connectors restrict flow. Also verify the main propane valve is fully open and the excess flow valve hasn't tripped.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Leak at connection:</strong> If bubble test shows leak at the quick-connect fitting — the check valve O-ring is failing. The fitting can be disassembled and O-ring replaced or the entire fitting can be replaced. Use only propane-rated thread sealant on fittings.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Grill hose inspection:</strong> The hose from the quick-connect to the grill is often overlooked. Inspect for cracks, brittleness, and UV damage annually. Replace every 5 years or immediately if any damage is found.</div></div>
+          <div class="info-box">💡 Quick-connect fittings are not universal — male and female connectors must match. Measure thread size and check if the fitting is 1/4" inverted flare or POL before ordering replacements.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+outdoor+propane+grill+quick+connect+repair" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Outdoor Grill Quick Connect Propane Repair</div></div>
+        </a>
+      </div>
+
+      <!-- LEVELING JACKS -->
+      <div id="exterior-leveljacks" class="sub-section">
+        <div class="card">
+          <div class="card-title">Leveling Jack System — Types and Diagnosis</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Key difference:</strong> Leveling jacks actually lift the RV to level it. Stabilizer jacks only stabilize — they are NOT designed to lift the coach weight. Never confuse the two.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Hydraulic systems (HWH, Power Gear, Lippert):</strong> Check hydraulic fluid level first — should be red/pink and clear. Milky or dark fluid indicates water contamination — change fluid. Low fluid = slow extension or failure to hold position.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Electric over hydraulic:</strong> Most common failure is corrosion at electrical connections. Start diagnosis at the power source and trace voltage to each relay and motor. Most failures are bad grounds or corroded connections — not failed motors.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Jacks won't retract:</strong> Hydraulic override procedure — locate manual release valve(s), open valve, manually push jacks up. Leave release valves open until repaired. Never drive with jacks extended.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Air in hydraulic lines:</strong> Causes uneven extension and poor holding. Bleed the system by cycling jacks fully up and down several times. Some systems require a specific bleeding procedure per the manufacturer manual.</div></div>
+          <div class="tip"><div class="tip-icon">6</div><div class="tip-text"><strong>Control module failures:</strong> Error codes on the display panel pinpoint faults. Lippert, HWH, and Power Gear all have specific error code lists. Always look up the exact code before replacing components — the most common fix is a dirty or loose connector, not a bad module.</div></div>
+          <div class="danger-box">⛔ Minimum battery voltage for reliable leveling jack operation is 10.5–11V under load. Low battery is the #1 cause of jack malfunctions and is often misdiagnosed as a jack failure. Check battery first always.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Preventive Maintenance Schedule</div>
+          <table>
+            <tr><th>Task</th><th>Frequency</th></tr>
+            <tr><td>Hydraulic fluid level check</td><td class="val">Every 6 months</td></tr>
+            <tr><td>Lubricate jack legs and pins</td><td class="val">Every 6 months</td></tr>
+            <tr><td>Clean all electrical connections</td><td class="val">Annually</td></tr>
+            <tr><td>Inspect hoses for cracks or leaks</td><td class="val">Annually</td></tr>
+            <tr><td>Check mounting bolts for tightness</td><td class="val">Annually</td></tr>
+            <tr><td>Full system cycle test</td><td class="val">Before each season</td></tr>
+          </table>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+leveling+jack+repair+hydraulic+electric+troubleshoot" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Leveling Jack Troubleshoot and Repair</div></div>
+        </a>
+      </div>
+
+      <!-- STABILIZERS MANUAL -->
+      <div id="exterior-stabman" class="sub-section">
+        <div class="card">
+          <div class="card-title">Manual Stabilizer Jacks — Maintenance and Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Remember:</strong> Stabilizer jacks do NOT level the RV — they only reduce rocking after the unit is already level. Extend them until snug contact with ground, not to lift weight.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Scissor jacks:</strong> Most common on travel trailers. Inspect the screw mechanism and pivot points for rust and damage. Lubricate the screw with white lithium grease. Check for stripped threads — stripped scissor jacks must be replaced.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>A-frame jacks:</strong> Common on 5th wheels. Inspect the pin and hole mechanism for wear. Bent or cracked arms must be replaced — do not use damaged jacks.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Jack pads:</strong> Always use jack pads under stabilizer feet on soft ground. The foot digs in otherwise and provides no stability. Carry a set of X-Chock wheel chocks and stabilizer pads as standard equipment.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Rust treatment:</strong> Surface rust on stabilizer arms is cosmetic — treat with rust converter and repaint. Structural rust that has eaten through the metal wall thickness means replacement.</div></div>
+          <div class="success-box">✓ Upgrading from stock scissor jacks to heavy-duty bolt-on stabilizers is a great upsell — dramatically reduces rocking and is a one-time installation customers appreciate every trip.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+stabilizer+jack+repair+maintenance+scissor" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Manual Stabilizer Jack Maintenance and Repair</div></div>
+        </a>
+      </div>
+
+      <!-- STABILIZERS ELECTRIC -->
+      <div id="exterior-stabelec" class="sub-section">
+        <div class="card">
+          <div class="card-title">Electric Stabilizer Jacks — Diagnosis and Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Common brands:</strong> Lippert Ground Control, Stromberg Carlson, BAL/Noco, Power Gear. Each has specific troubleshooting procedures — identify brand before diagnosing.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Won't move:</strong> Check 12V fuse panel for blown fuse first. Electric stabilizers draw 15–20 amps per motor — fuses are common failure point. Also check battery voltage — below 10.5V motors won't operate properly.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>One jack works, others don't:</strong> Usually a wiring or motor issue on the non-working jack(s). Test voltage at each motor connector. Check ground connections at each motor — ground failure is the most common cause.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Motor replacement:</strong> Motors are interchangeable across most brands with similar specs. Measure shaft diameter and motor bolt pattern before ordering. Many Lippert motors are cross-compatible.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Manual override:</strong> All electric stabilizers have a manual crank override — typically a 3/8" or 1/2" hex drive on the motor end. Always test and demonstrate this to customers — they need to know it for emergencies.</div></div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+electric+stabilizer+jack+repair+motor+Lippert" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Electric Stabilizer Jack Repair and Motor Replacement</div></div>
+        </a>
+      </div>
+
+      <!-- STEPS MANUAL -->
+      <div id="exterior-stepsman" class="sub-section">
+        <div class="card">
+          <div class="card-title">Manual Entry Steps — Repair and Maintenance</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Folding step mechanism:</strong> Inspect pivot points and fold mechanism for bent components, rust, and missing hardware. Steps that don't fold fully can be damaged on the road or prevent door closure.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Step wobble:</strong> Usually caused by worn bushings at pivot points or loose mounting hardware. Check all mounting bolts at the frame attachment point — these loosen from road vibration.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Step surface:</strong> Inspect step treads for cracks, worn grip surface, and corrosion. Replace worn non-slip pads — a slippery wet step is a serious liability issue especially for elderly customers.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Lubrication:</strong> Apply white lithium grease or silicone lubricant to all pivot points and the fold mechanism. Steps should fold and unfold smoothly — stiff steps indicate dry pivot points.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Step replacement:</strong> Most manual steps are bolted on with 4 mounting bolts to the frame rail or door frame. Measure step width and depth before ordering — widths vary from 18" to 24" commonly.</div></div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+entry+step+manual+repair+replace" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Manual Entry Step Repair and Replacement</div></div>
+        </a>
+      </div>
+
+      <!-- STEPS ELECTRIC -->
+      <div id="exterior-stepselec" class="sub-section">
+        <div class="card">
+          <div class="card-title">Electric Entry Steps — Diagnosis and Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Common brands:</strong> Kwikee (now Lippert), Stromberg Carlson, Venture. Kwikee is the most common — uses a 12V DC motor with a gear-drive mechanism.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Steps won't extend:</strong> Check fuse first. Kwikee steps have a dedicated in-line fuse near the step motor — commonly 15 or 20A. Also check door switch connection — steps often extend/retract when door opens/closes.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Step control switch:</strong> Most electric steps have a manual override switch on the step control module. If door switch fails the override switch allows manual operation. Locate this switch and test it during diagnosis.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Motor test:</strong> Apply 12V directly to motor leads to test motor independently. If motor runs when direct powered but not through control module — the module or wiring is the issue, not the motor.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Step won't retract fully:</strong> Usually debris or obstruction in the step mechanism. Clean and lubricate step arms and roller mechanism. Check for bent components from a road strike.</div></div>
+          <div class="danger-box">⛔ Steps that don't fully retract are a road hazard and can be ripped off at highway speed. Never allow customer to drive with steps not fully retracted. Verify full retraction before they leave.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+Kwikee+electric+entry+step+repair+motor+replacement" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Kwikee Electric Step Repair and Motor Replacement</div></div>
+        </a>
+      </div>
+
+      <!-- BLACK TANK -->
+      <div id="exterior-blacktank" class="sub-section">
+        <div class="card">
+          <div class="card-title">Black Tank — Maintenance and Troubleshooting</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Always dump black first:</strong> Then dump gray tank to flush the sewer hose with cleaner water. Standard protocol every time.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Pyramid of doom:</strong> Solid waste piling up in the center of the tank without liquid. Caused by not using enough water per flush. Treatment: fill tank with water and tank treatment, let soak, agitate by driving, dump. Repeat if needed.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Tank sensors read full when empty:</strong> Sensors get coated with waste over time and read incorrectly. Flush tank thoroughly and use sensor cleaning chemicals. Most experienced RVers ignore the sensors after a while and go by usage.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Odors:</strong> Add water and enzyme/bacteria treatment after every dump. Keep tank partially filled with water when in use. Check and replace the toilet seal if odor enters the coach — dried seals allow sewer gas in.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Tank flush system:</strong> Many units have a built-in flush port on the tank. Connect a hose directly for thorough interior rinsing after dumping. If no built-in flush — a flush wand through the toilet works well.</div></div>
+          <div class="info-box">💡 Carrying Enzyme-based tank treatment (Happy Campers, Unique Camping) on the truck is a great upsell add-on. Customers appreciate the convenience and it adds margin to every tank service call.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+black+tank+cleaning+maintenance+flush+tips" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Black Tank Cleaning and Maintenance</div></div>
+        </a>
+      </div>
+
+      <!-- BLACK TANK VALVE -->
+      <div id="exterior-blackvalve" class="sub-section">
+        <div class="card">
+          <div class="card-title">Black Tank Valve — Diagnosis and Replacement</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Valve sizes:</strong> Black tank valve is almost always a 3" valve (to pass solids). Confirm size before ordering replacement. Some rigs use 3" for both tanks — measure before buying.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Stuck valve:</strong> Most common issue. Service the valve first before replacing — Valterra makes seal replacement kits. Empty and rinse tank, leave open 24 hours to dry. Remove 4 bolts, pry pipe flanges apart gently, remove blade, replace O-ring seals, reassemble with Molykote 111 grease.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Lubricant down the drain trick:</strong> Pour vegetable oil down toilet or sink drain before attempting to move stuck valve. Let sit, try the valve again. Often loosens a stuck blade without disassembly.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Full valve replacement:</strong> 4 bolts hold the valve between two pipe flanges. Remove bolts, pry flanges apart, slide old valve out, set new gaskets, slide new valve in, reinstall bolts. Always replace both gaskets with a new valve.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Cable pull vs direct pull:</strong> Some valves use a cable to pull the blade open. If direct pull handle moves but tank doesn't drain — check if cable has disconnected at the valve end before diagnosing a stuck valve.</div></div>
+          <div class="warn-box">⚠ Make absolutely sure the tank is empty and rinsed before removing any bolts from the valve. Even a small amount of remaining waste will escape when you break the flanges apart. Have towels, gloves, and a bucket ready.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+black+tank+dump+valve+replacement+repair+Valterra" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Black Tank Valve Replacement and Repair</div></div>
+        </a>
+      </div>
+
+      <!-- GRAY TANK -->
+      <div id="exterior-graytank" class="sub-section">
+        <div class="card">
+          <div class="card-title">Gray Tank — Maintenance and Issues</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>What goes in:</strong> Sinks and shower drain into gray tank. Grease, soap scum, and hair build up on tank walls and sensors over time. More manageable than black tank but still needs regular attention.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Keep it partially closed:</strong> Many RVers leave the gray valve open when hooked up — this allows the tank to dry out and grease to build up on walls. Close the valve and dump periodically even on full hookup sites.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Odors from gray tank:</strong> Grease and soap scum ferment in warm weather. Flush with hot water and dish soap through all drains. Add tank treatment. Check that P-traps haven't dried out — pour water down unused drains to reseal the trap.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Tank valve size:</strong> Gray tank typically uses a 1.5" valve (liquids only). Some RVs use 3" for both. Gray tank is 1.5" in most cases — confirm before ordering.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Slow drain from shower or sink:</strong> Check the tank vent pipe — bird nests and debris can block the roof vent causing slow drain and gurgling. Also check the drain line for grease buildup — flush with hot water and enzyme cleaner.</div></div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+gray+tank+maintenance+cleaning+odor+tips" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Gray Tank Maintenance and Odor Prevention</div></div>
+        </a>
+      </div>
+
+      <!-- GRAY TANK VALVE -->
+      <div id="exterior-grayvalve" class="sub-section">
+        <div class="card">
+          <div class="card-title">Gray Tank Valve — Diagnosis and Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Same procedure as black valve:</strong> Same bolt-on flange design, same replacement process. Gray is easier since tank contents are less hazardous but still wear gloves and have towels ready.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Stuck gray valve:</strong> Grease and soap scum coating the blade is the most common cause. Try vegetable oil trick — pour down sink drain, let sit 30 minutes, attempt to move valve. Works more often than not on gray valves.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Drain then wait:</strong> Even after the gray tank appears empty — let it drain for several minutes before breaking the valve flanges. Residual water in drain lines will drip for a while.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Preventive maintenance:</strong> After every dump, pour 1/2 cup vegetable oil down the kitchen drain. This lubricates the gray tank valve blade from the inside out and prevents the most common sticking issue.</div></div>
+          <div class="success-box">✓ Pro tip: Selling customers on the vegetable oil trick prevents callbacks on stuck gray valves. It is free advice that builds loyalty and reduces repeat service calls.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+gray+tank+valve+stuck+repair+replacement" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Gray Tank Valve Repair and Replacement</div></div>
+        </a>
+      </div>
+
+      <!-- CITY WATER INTAKE -->
+      <div id="exterior-citywater" class="sub-section">
+        <div class="card">
+          <div class="card-title">City Water Intake — Diagnosis and Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Check valve function:</strong> The city water inlet has a built-in check valve that lets city pressure in but prevents the water pump from pushing water out. If city water leaks out of the inlet — the check valve O-ring is failing.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Fresh tank filling on city water:</strong> If the fresh tank is mysteriously filling while on city water hookup — the city/tank valve or check valve is leaking internally. Diagnose by checking if water flows from the winterize/antifreeze hose in the wet bay.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Inlet replacement:</strong> City water inlets are a standard fitting available at any RV parts supplier. Shut off water, unscrew the inlet from outside, disconnect the line from inside, reconnect new inlet with thread sealant, test for leaks.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Low pressure at all fixtures on city water:</strong> Check the water pressure regulator — most RVers should use an inline pressure regulator (40–60 PSI) between the campground hose bib and the RV to protect the plumbing. A failed or stuck regulator causes low flow.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Inlet screen:</strong> The city water inlet has a fine screen that catches debris. Inspect and clean this screen annually — a clogged screen reduces flow to the entire RV plumbing system.</div></div>
+          <div class="info-box">💡 Carrying a few pressure regulators on the truck is a great upsell — customers frequently have none. A $15 inline regulator prevents hundreds of dollars in plumbing damage from high-pressure campground hookups.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+city+water+inlet+check+valve+repair+replacement" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV City Water Inlet and Check Valve Repair</div></div>
+        </a>
+      </div>
+
+      <!-- LOW POINT DRAINS -->
+      <div id="exterior-lowpoint" class="sub-section">
+        <div class="card">
+          <div class="card-title">Low Point Drains — Operation and Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>What they are:</strong> Low point drains are the lowest points in the hot and cold water lines — plus one for the fresh tank in many units. Gravity drain as much water as possible during winterization to prevent freeze damage.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Typical location:</strong> Usually accessed from the underbelly or a storage compartment. Often colored red (hot) and blue (cold). Most have a pull cap or valve handle to open.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Drains won't open:</strong> Low point drain caps and petcocks seize from UV exposure and infrequent use. Apply penetrating oil and work the fitting gently. Replace with a ball valve fitting for reliable future operation.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Dripping when closed:</strong> Low point drain valves commonly drip when closed after years of use. Replace the valve with a 1/2" or 3/8" ball valve (match existing line size). Ball valves provide much more reliable seal than the stock petcock design.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Winterization order:</strong> Open low point drains, run water pump briefly to push remaining water out, then blow out lines with compressed air (30–50 PSI max), then add antifreeze to trap RV-safe antifreeze in P-traps.</div></div>
+          <div class="warn-box">⚠ In Maine's climate low point drain condition is critical — a drain that won't fully open during winterization can result in burst lines. Inspect and replace suspect fittings proactively before winter.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+low+point+drain+winterize+repair+replace" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Low Point Drain Repair and Winterization</div></div>
+        </a>
+      </div>
+
+      <!-- WATER HEATER TANK -->
+      <div id="exterior-whtank" class="sub-section">
+        <div class="card">
+          <div class="card-title">Tank Water Heater (Suburban / Atwood-Dometic)</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Know your brand:</strong> Suburban uses a magnesium anode rod — inspect every 6–12 months, replace when over 50–75% depleted. Atwood/Dometic uses an aluminum tank — NO anode rod. Never install a magnesium anode in an Atwood tank.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Anode rod replacement (Suburban):</strong> Shut off propane and 120V, let cool, relieve pressure by opening a hot faucet. Remove drain plug/anode with a 1-1/16" socket. Inspect, replace if depleted. Use Teflon tape on new anode threads.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Annual flush:</strong> Drain tank, flush with fresh water to remove sediment buildup. Hard water areas (including Maine) accelerate sediment accumulation — reduces efficiency and shortens tank life.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Won't light on propane:</strong> Check propane supply at tank, inspect electrode gap (should be 1/8"), clean burner orifice of spider webs or debris, check igniter spark, test thermocouple/ECO (emergency cutoff) device.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>T&P relief valve dripping:</strong> Test by lifting lever briefly — should release water then seal. If it drips continuously after testing — replace the valve. Never cap or plug a dripping T&P relief valve — it is a safety device.</div></div>
+          <div class="tip"><div class="tip-icon">6</div><div class="tip-text"><strong>Bypass valve:</strong> Located on back of heater — must be in BYPASS position for winterization to prevent antifreeze filling the tank. Must be in NORMAL position for use. Customers frequently forget to switch back from bypass after spring startup.</div></div>
+          <div class="danger-box">⛔ If the ECO (Emergency Cutoff) trips immediately after reset — do not keep resetting it. ECO trips indicate overtemperature which means a serious failure. Diagnose the root cause before resetting.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+water+heater+anode+rod+repair+Suburban+Atwood" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Tank Water Heater Repair and Anode Rod Service</div></div>
+        </a>
+      </div>
+
+      <!-- WATER HEATER TANKLESS -->
+      <div id="exterior-whtankless" class="sub-section">
+        <div class="card">
+          <div class="card-title">Tankless Water Heater (Girard, Fogatti, Bosch, Rinnai)</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>How they work:</strong> Tankless units ignite when minimum water flow is detected (typically 0.5–1.0 GPM). They require consistent water flow to maintain ignition. Partially closed valves, clogged aerators, or low-flow showerheads cause cold water bursts and short cycling.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Won't stay lit:</strong> Most common cause is a dirty inlet screen at the cold water connection — unscrew the inlet, remove and rinse the screen. Also check minimum flow requirement — restrictive fixtures prevent ignition.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Descaling (critical in Maine):</strong> Hard water causes scale buildup on heat exchanger reducing efficiency and eventually causing failure. Descale every 6–12 months. Connect a small pump, run white vinegar or tankless descaler through the system for 30–60 minutes, rinse with clean water.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Error codes:</strong> All modern tankless units display error codes. Always look up the exact code in the brand-specific manual before diagnosing. Common codes: ignition failure, overtemperature, flow sensor fault, gas pressure fault.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Sooting or smell at exterior vent:</strong> Black soot around the exterior vent door indicates incomplete combustion — dirty burner, blocked flue, or inadequate combustion air supply. Clean the burner and inspect the flue for blockage including insect nests.</div></div>
+          <div class="tip"><div class="tip-icon">6</div><div class="tip-text"><strong>Winterization difference:</strong> Unlike tank heaters — tankless units should NOT be bypassed or have antifreeze added to them. Blow out with compressed air only or consult the brand-specific winterization procedure.</div></div>
+          <div class="info-box">💡 Tankless heaters are becoming very common on newer trailers. Learn the Girard GSWH-2 and Fogatti models — these are the most commonly installed units in the RV market right now.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+tankless+water+heater+repair+descale+Girard+Fogatti" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Tankless Water Heater Repair and Descaling</div></div>
+        </a>
+      </div>
+
+    </div><!-- end content -->
+  </div><!-- end exterior cat -->
+
+  <!-- ═══ INTERIOR CATEGORY ═══ -->
+  <div id="cat-interior" class="cat-section">
+    <div class="sub-nav">
+      <div class="sub-tabs">
+        <button class="sub-tab active" onclick="showSub('interior','stove',this)">Stove/Oven</button>
+        <button class="sub-tab" onclick="showSub('interior','cooktop',this)">Cooktop</button>
+        <button class="sub-tab" onclick="showSub('interior','fridge',this)">Refrigerator</button>
+        <button class="sub-tab" onclick="showSub('interior','microwave',this)">Microwave</button>
+        <button class="sub-tab" onclick="showSub('interior','fireplace',this)">Fireplace</button>
+        <button class="sub-tab" onclick="showSub('interior','tv',this)">TV</button>
+        <button class="sub-tab" onclick="showSub('interior','furnace',this)">Furnace</button>
+        <button class="sub-tab" onclick="showSub('interior','ac',this)">Air Conditioner</button>
+        <button class="sub-tab" onclick="showSub('interior','thermman',this)">Thermostat Manual</button>
+        <button class="sub-tab" onclick="showSub('interior','thermdig',this)">Thermostat Digital</button>
+        <button class="sub-tab" onclick="showSub('interior','switchpanel',this)">Switch Panel</button>
+        <button class="sub-tab" onclick="showSub('interior','bathsink',this)">Bathroom Sink</button>
+        <button class="sub-tab" onclick="showSub('interior','kitsink',this)">Kitchen Sink</button>
+        <button class="sub-tab" onclick="showSub('interior','shower',this)">Shower</button>
+        <button class="sub-tab" onclick="showSub('interior','bathfan',this)">Bathroom Vent Fan</button>
+        <button class="sub-tab" onclick="showSub('interior','toilet',this)">Toilet</button>
+        <button class="sub-tab" onclick="showSub('interior','toiletlines',this)">Toilet Water Lines</button>
+        <button class="sub-tab" onclick="showSub('interior','waterpump',this)">Water Pump</button>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- STOVE/OVEN -->
+      <div id="interior-stove" class="sub-section active">
+        <div class="card">
+          <div class="card-title">RV Stove/Oven — Diagnosis and Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Normal operation sequence:</strong> RV ovens have a manual pilot that must be lit first. Press and hold knob to supply LP to pilot, hold flame to thermocouple for 30 seconds until it stays lit. Then turn to desired temp — thermostat regulates flow to main burner. If pilot goes out, safety magnet drops and shuts off LP.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Pilot won't stay lit:</strong> Thermocouple is most common cause. Hold the pilot longer — thermocouple needs 30–45 seconds of heat to generate enough millivoltage to hold the safety valve open. If it still drops out — test thermocouple with multimeter or replace it.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Oven won't heat to temperature:</strong> Could be thermostat failure, clogged orifice, or weak regulator pressure. Check LP pressure first (should be 11" WC). Inspect oven temperature bulb in rear of oven — if kinked or damaged it gives false readings to the thermostat.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Internal LP regulator:</strong> Most RV stoves have a built-in secondary regulator under the cooktop that reduces from 11" WC to 10" WC. This regulator can fail — if all burners are weak but system LP pressure is fine, this internal regulator is the culprit.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>LP detector lockout:</strong> On motorhomes the LP detector (located near floor level) must be ON for LP to flow to appliances. If the LP detector is off or has tripped — no gas reaches any appliance including the stove. Check detector first if all LP appliances fail simultaneously.</div></div>
+          <div class="warn-box">⚠ Stove burners have NO thermocouple — LP flows freely if the knob is open with no flame. Never leave a knob open without flame present. Always check for gas smell before lighting.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+stove+oven+pilot+thermocouple+repair+troubleshoot" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Stove and Oven Repair — Pilot and Thermocouple</div></div>
+        </a>
+      </div>
+
+      <!-- COOKTOP -->
+      <div id="interior-cooktop" class="sub-section">
+        <div class="card">
+          <div class="card-title">Cooktop Igniter and Burner Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Igniter won't spark:</strong> Check the battery in the igniter button first — many cooktops use a AA or AAA battery that customers overlook. Also inspect the ceramic insulator on the igniter tip for cracks — a crack sends the spark through the insulator instead of to the burner.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Spark gap spec:</strong> The gap between the igniter electrode and the burner must be 3/16" for reliable ignition. Too wide or too narrow and it won't light. Adjust electrode position carefully — this solves many "igniter not working" calls without replacing any parts.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Spark module failure:</strong> If no burners spark, the spark ignition module on the back panel has likely failed. Label all wires before removing — modules have multiple wire positions that must go back exactly. Replacement modules are inexpensive and widely available.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Wire shorting on gas tube:</strong> A common but overlooked cause — the igniter wire's insulation melts from heat and contacts the gas supply tube, shorting the spark to ground instead of the burner. Lift cooktop top (push back and lift), inspect wire routing. Reroute and use high-temp wire loom if needed.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Burner ports clogged:</strong> Spider webs and debris in burner ports are extremely common after storage. Use a toothpick or fine wire to clear ports — never use a drill bit as it enlarges the orifice. Clean with warm soapy water, rinse thoroughly, dry completely before use.</div></div>
+          <div class="info-box">💡 If the burner lights manually with a match but igniter doesn't spark — it is purely an igniter issue. This simple test saves time by ruling out LP supply problems immediately.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+cooktop+igniter+spark+repair+burner+clogged" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Cooktop Igniter Repair and Burner Cleaning</div></div>
+        </a>
+      </div>
+
+      <!-- REFRIGERATOR -->
+      <div id="interior-fridge" class="sub-section">
+        <div class="card">
+          <div class="card-title">RV Refrigerator — How It Works and Diagnosis</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>How absorption fridges work:</strong> No compressor — heat from propane flame or 120V element causes ammonia solution to percolate through tubes, producing cooling. Completely different from home fridges. This is why the RV must be reasonably level — gravity drives circulation.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Level requirement:</strong> Must be within 3 degrees side-to-side and 6 degrees front-to-back for proper cooling. Running unlevel for extended time can permanently damage the cooling unit. If fridge was run severely unlevel, try the rubber mallet trick — tap cooling unit tubes gently to dislodge sediment blockage, run for several hours.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Not cooling on either mode:</strong> Check thermistor first — disconnect the thermistor wire from control board. If fridge starts cooling — thermistor has failed. At room temp: ~2000 ohms. In ice water: ~9500 ohms. Outside spec = replace thermistor.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Not cooling on LP only:</strong> Check manual gas valve is open (Dometic and Norcold both have one). Inspect burner orifice for spider webs — one spider web is enough to block ignition. Clean flue tube. Check LP pressure at system (must be 11" WC).</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Not cooling on 120V only:</strong> Test 120V heating element — check for continuity. Inspect control board fuse. Check that shore power is connected and breaker is on. Verify 120V at the fridge receptacle with multimeter.</div></div>
+          <div class="tip"><div class="tip-icon">6</div><div class="tip-text"><strong>Condenser plugged:</strong> Remove exterior access panel. If condenser fins are packed with insulation debris — clean thoroughly. This is a very common and very simple fix that looks like a major problem from inside the RV.</div></div>
+          <div class="tip"><div class="tip-icon">7</div><div class="tip-text"><strong>Yellow ammonia residue:</strong> Oily yellowish residue on cooling unit coils = ammonia leak. Cooling unit has failed — replacement or new fridge required. Cannot be field repaired.</div></div>
+          <div class="danger-box">⛔ Ammonia leaks from cooling units are a safety hazard — strong odor inside RV. Ventilate immediately. Cooling unit replacement requires a qualified technician.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+refrigerator+not+cooling+Dometic+Norcold+repair+thermistor" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Refrigerator Not Cooling — Dometic Norcold Repair</div></div>
+        </a>
+      </div>
+
+      <!-- MICROWAVE -->
+      <div id="interior-microwave" class="sub-section">
+        <div class="card">
+          <div class="card-title">RV Microwave — Troubleshooting</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>No power:</strong> RV microwaves run on 120V AC — check circuit breaker first. Many RV microwaves share a circuit with other appliances. If shore power is connected and other 120V items work, check the dedicated microwave breaker or fuse.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Display works but won't heat:</strong> Magnetron or high-voltage capacitor failure. The capacitor holds a lethal charge even when unplugged — do not open a microwave unless you know how to safely discharge it. This is usually a replacement call, not a repair call.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Trips breaker immediately:</strong> Internal short — usually means microwave replacement is needed. Could also be circuit overload if other appliances are on the same circuit.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Over-the-range combo units:</strong> Many RVs have a microwave/convection oven combo. These draw significant amperage — do not run on a 20A generator or 20A hookup with other loads. Requires 30A minimum to operate reliably.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Replacement sizing:</strong> RV microwaves are sized to fit specific cabinet openings. Measure the opening — width, height, and depth — before ordering. Standard RV microwaves are often 1.0–1.4 cu ft. Do not assume standard home units will fit.</div></div>
+          <div class="info-box">💡 Most RV microwave failures are replacement jobs not repair jobs. Parts cost usually approaches or exceeds unit replacement cost. Set customer expectations accordingly before diagnosing deeply.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+microwave+not+working+replacement+troubleshoot" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Microwave Troubleshooting and Replacement</div></div>
+        </a>
+      </div>
+
+      <!-- FIREPLACE -->
+      <div id="interior-fireplace" class="sub-section">
+        <div class="card">
+          <div class="card-title">RV Fireplace — Electric and Propane</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Electric fireplaces (most common):</strong> Run on 120V AC — check breaker first. Usually a combination of LED flame effect motor and a heating element. If flame effect works but no heat — heating element has failed. If no flame effect — control board or LED module issue.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Remote control issues:</strong> Electric fireplaces with remotes frequently have battery/pairing issues. Replace batteries in remote first. If pairing is lost — most units have a reset button behind the front panel or inside the unit.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Propane fireplaces:</strong> Less common but found in some Class A units. Operate similar to a furnace — thermocouple-based safety, manual pilot. Same pilot/thermocouple diagnosis as the stove applies here.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Overheating shutoff:</strong> Most electric fireplaces have a thermal overload protector that trips if the unit overheats — usually from blocked airflow. Check that intake and exhaust vents are clear. Allow to cool, reset the unit, ensure clearances around the unit are maintained.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Replacement parts:</strong> Dimplex, Touchstone, and MagicFlame are common RV fireplace brands. Many components like flame motors and heating elements are available separately. Check the model number on the unit — usually on a label inside the front panel.</div></div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+electric+fireplace+not+working+repair+troubleshoot" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Electric Fireplace Repair and Troubleshooting</div></div>
+        </a>
+      </div>
+
+      <!-- TV -->
+      <div id="interior-tv" class="sub-section">
+        <div class="card">
+          <div class="card-title">RV Television — Power and Signal Issues</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>12V vs 120V TVs:</strong> Many RV TVs are 12V DC units that run directly from the house battery. Others are standard 120V units. Know which you have before diagnosing — 12V TVs will work without shore power, 120V TVs will not.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>12V TV no power:</strong> Check 12V fuse panel — TV usually has a dedicated fuse. Check battery voltage — below 11.5V and 12V TVs may not power on or may display power issues.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Signal issues:</strong> OTA signal comes from roof antenna — check antenna is raised if it is a crank-up type. Check signal amplifier power switch (usually near the TV or on the antenna control) — must be on to boost signal. Bypass amplifier to test if it has failed.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Coax connections:</strong> Vibration from travel loosens coax connectors behind the TV and at wall plates. Check all coax connections — hand tighten. Also inspect the coax cable routing for chafing where it passes through walls or cabinet edges.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>TV mount failures:</strong> RV TV mounts take road vibration constantly. Inspect mounting hardware annually — especially articulating arms that extend and retract. Loose TV during travel is a serious safety hazard.</div></div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+TV+no+power+signal+antenna+troubleshoot+repair" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV TV Power and Signal Troubleshooting</div></div>
+        </a>
+      </div>
+
+      <!-- FURNACE -->
+      <div id="interior-furnace" class="sub-section">
+        <div class="card">
+          <div class="card-title">RV Furnace — Normal Operation and Diagnosis</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Normal sequence:</strong> Thermostat calls for heat → blower fan starts (cold air for 15–30 sec) → sail switch closes confirming airflow → igniter sparks and gas valve opens → burner lights → hot air within seconds. Fan runs 45–90 seconds after shutdown to cool heat exchanger.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Furnace won't start at all:</strong> Check 12V battery voltage first — furnace needs strong 12V to operate. Low battery is #1 cause of furnace failure misdiagnosed as furnace failure. Check 12V fuse panel for blown furnace fuse. Verify thermostat is set to HEAT and setpoint is above room temp.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Fan runs but no ignition:</strong> Purge air from LP lines first — run stove burner 10 seconds to fill line with gas, then retry furnace. If still no ignition — check exterior exhaust vent for spider webs or mud dauber nests. One bug or nest can completely block ignition.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Sail switch:</strong> Critical component — a small flap inside the furnace housing that confirms adequate airflow before allowing ignition. Dirty return air path (under fridge, near floor) can restrict airflow and prevent sail switch from closing. Vacuum the return air area monthly during heating season.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Ignition lockout:</strong> After 3 failed ignition attempts the furnace locks out for 1 hour. Reset by switching thermostat off and back on. Find the root cause before the customer resets it repeatedly — repeated lockouts stress the control board.</div></div>
+          <div class="tip"><div class="tip-icon">6</div><div class="tip-text"><strong>Flame sensor / igniter:</strong> The igniter is also the flame sensor on most RV furnaces. If flame lights but shuts off after 6–10 seconds — flame sensor is not reading the flame. Clean with fine emery cloth. A cracked ceramic insulator allows spark to short — replace igniter.</div></div>
+          <div class="tip"><div class="tip-icon">7</div><div class="tip-text"><strong>Control board LED codes:</strong> Most Suburban and Atwood/Dometic boards flash diagnostic codes on the control board LEDs. Count the flashes to look up the fault code in the brand manual before replacing parts.</div></div>
+          <div class="danger-box">⛔ Never override a limit switch or sail switch — these are safety devices. A furnace that bypasses its safety controls can ignite LP gas or overheat the heat exchanger causing a fire.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+furnace+not+working+troubleshoot+Suburban+Atwood+sail+switch" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Furnace Troubleshooting — Suburban and Atwood</div></div>
+        </a>
+      </div>
+
+      <!-- AIR CONDITIONER -->
+      <div id="interior-ac" class="sub-section">
+        <div class="card">
+          <div class="card-title">RV Air Conditioner — Diagnosis and Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Not cooling — first checks:</strong> Clean or replace filters — dirty filters are the #1 cause of poor cooling. Filters should be vacuumed every 2 weeks in heavy use. Inspect both interior evaporator coils and exterior condenser coils for debris. Clean condenser coils on roof with soft brush — bent fins reduce airflow drastically.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Compressor not coming on:</strong> Check shore power voltage — below 110V AC and the compressor won't start or will quickly trip. Check capacitors with multimeter — a swollen, leaking, or open capacitor is very common and inexpensive to replace. Test compressor and run capacitor.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Temperature drop test:</strong> Working AC should drop air temperature 15–20°F from return air to supply air. If return is 85°F, supply should be 65–70°F. Less than 15°F drop with clean filters and coils = possible low refrigerant or failing compressor.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Fan runs but compressor doesn't hum:</strong> Start capacitor failure is very common in RV units — capacitor gives the compressor the extra kick to start. Test with multimeter capacitance setting. Replacement is inexpensive — typically $15–$30.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Water leaking inside:</strong> Clogged condensate drain on roof unit — remove shroud, clear drain holes. Also check gasket seal between roof unit and interior ceiling assembly — a failing gasket allows condensate to drip inside.</div></div>
+          <div class="tip"><div class="tip-icon">6</div><div class="tip-text"><strong>Short cycling (turns on and off rapidly):</strong> Iced evaporator coils — caused by dirty filters or low refrigerant. Allow to thaw with fan only mode, then address root cause. Also check thermostat placement — too close to supply vent gives false readings.</div></div>
+          <div class="warn-box">⚠ RV AC refrigerant is a sealed system — recharging requires EPA 608 certification and specialized equipment. If refrigerant leak is suspected, this requires a certified technician. Do not attempt to add refrigerant without proper certification.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+air+conditioner+not+cooling+capacitor+repair+Dometic+Coleman" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV AC Not Cooling — Capacitor and Coil Repair</div></div>
+        </a>
+      </div>
+
+      <!-- THERMOSTAT MANUAL -->
+      <div id="interior-thermman" class="sub-section">
+        <div class="card">
+          <div class="card-title">Manual Thermostat — Troubleshooting</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Runs on 12V DC:</strong> RV thermostats operate from the 12V house battery — not 120V shore power. If battery is dead or disconnected the thermostat and furnace will not function even when plugged in to shore power.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>No response from furnace or AC:</strong> First check 12V battery voltage. Check thermostat wiring connections at the back — two-wire for furnace only, more wires for AC/heat pump units. Loose connection at the thermostat terminals is a common cause of intermittent operation.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Bypass test:</strong> To test if the thermostat is faulty — disconnect the thermostat and jumper the R and W wires together (for furnace). If the furnace runs — the thermostat is faulty. If furnace still doesn't run — fault is in the furnace itself.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Thermostat location matters:</strong> If thermostat is installed near a heat source — register, window, kitchen — it will short cycle or not call for heat when needed. Relocating the thermostat to a more central wall location often solves chronic heating and cooling complaints.</div></div>
+          <div class="info-box">💡 Many manual RV thermostats use a heat anticipator — a small dial inside the thermostat. If the furnace short cycles frequently adjust the anticipator setting. Turn clockwise for longer run cycles.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+manual+thermostat+troubleshoot+replace+furnace+wiring" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Manual Thermostat Troubleshoot and Replace</div></div>
+        </a>
+      </div>
+
+      <!-- THERMOSTAT DIGITAL -->
+      <div id="interior-thermdig" class="sub-section">
+        <div class="card">
+          <div class="card-title">Digital Thermostat — Diagnosis and Reset</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Common brands:</strong> Dometic, Coleman/Airxcel, Suburban, Furrion, and Lippert. Each has its own wiring and communication protocol — do not assume one brand's thermostat is compatible with another brand's AC or furnace.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Blank or frozen display:</strong> Try a reset — most digital thermostats have a reset button or reset procedure (often pressing two buttons simultaneously). If blank after reset — check 12V power supply and fuse. If display returns but system doesn't respond — wiring or communication issue.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Dometic thermostat reset:</strong> Switch mode to OFF. Press and hold MODE and TEMP UP buttons simultaneously. This resets the unit and often resolves intermittent issues without replacing the thermostat.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Communication errors:</strong> Digital thermostats communicate with AC and furnace units via a communication bus (2-wire or 3-wire). Corrosion or a nick in the communication wire causes error codes. Inspect wire run from thermostat to both AC and furnace for damage.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Compatibility warning:</strong> Cannot replace an RV A-frame thermostat with a residential unit — the RV thermostat controls AC, heat pump, and furnace on a shared communication bus. Residential thermostats are not compatible with this system.</div></div>
+          <div class="info-box">💡 Always look up the exact error code from the brand-specific documentation before replacing any components. Many digital thermostat errors are communication or voltage issues, not failed thermostats.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+digital+thermostat+reset+troubleshoot+Dometic+Coleman" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Digital Thermostat Reset and Troubleshooting</div></div>
+        </a>
+      </div>
+
+      <!-- SWITCH PANEL -->
+      <div id="interior-switchpanel" class="sub-section">
+        <div class="card">
+          <div class="card-title">12V Switch Panel / Power Distribution — Diagnosis</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>12V fuse panel location:</strong> Usually inside the RV near the converter or in a basement compartment. Contains blade-style automotive fuses for 12V circuits — lights, water pump, slides, vent fans, furnace, thermostat, and more. Always check here first for any 12V failure.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Multiple items stop working:</strong> If several unrelated 12V items stop working at once — check battery voltage and converter output. The converter charges the battery and provides 12V DC when on shore power. A failed converter takes out all 12V simultaneously.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Converter voltage output:</strong> Should output 13.5–14.4V DC when on shore power and charging the battery. Below 13V — converter is not charging properly. Use multimeter at the battery terminals to verify.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Lippert OneControl / smart panels:</strong> Newer units with touchscreen panels use CANbus communication. If the panel is unresponsive — low battery is the most common cause as the system requires minimum voltage to operate. Check battery first.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Slide switch not working:</strong> Slides are typically 12V DC — check dedicated slide fuse first. Also check battery voltage — slides draw heavy current and won't operate below about 11V. Never force a slide manually if motor is running — disconnect power first.</div></div>
+          <div class="success-box">✓ Carrying a quality multimeter and a spare fuse assortment is essential for any interior electrical call. A $7 outlet tester and a set of automotive blade fuses solves a large percentage of interior electrical service calls.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+12v+fuse+panel+converter+troubleshoot+power+distribution" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV 12V Fuse Panel and Converter Troubleshooting</div></div>
+        </a>
+      </div>
+
+      <!-- BATHROOM SINK -->
+      <div id="interior-bathsink" class="sub-section">
+        <div class="card">
+          <div class="card-title">Bathroom Sink — Repair and Maintenance</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Low or no flow:</strong> Check water pump is on and has power (12V fuse). Inspect the aerator on the faucet — bathroom aerators clog frequently from debris in the fresh water tank. Remove and clean or replace the aerator before diagnosing further.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Faucet drips:</strong> RV bathroom faucets use standard cartridge or ball valve designs — same repair as residential. Shut off water at the pump or city water. Disassemble faucet, replace O-rings or cartridge. Most replacement cartridges are standard plumbing supply store items.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Slow drain:</strong> Hair and soap buildup in the P-trap. Remove the P-trap (catches in a small bucket), clean thoroughly, reinstall. Also check that gray tank valve is closed — open valve with a full tank can cause slow drain or gurgling.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>P-trap dry out:</strong> If RV sits unused for weeks, P-traps evaporate and allow sewer gas to enter the coach. Pour water down all drains after storage to reseal the traps. A dry P-trap is the most common cause of sewer odors inside an RV.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Sink seal leaks:</strong> Water can work behind the sink rim and damage the countertop. Inspect the sink perimeter sealant — reapply silicone or butyl caulk around the sink rim if gaps appear. This is often done during annual maintenance inspections.</div></div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+bathroom+sink+faucet+repair+cartridge+replacement" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Bathroom Sink Faucet Repair</div></div>
+        </a>
+      </div>
+
+      <!-- KITCHEN SINK -->
+      <div id="interior-kitsink" class="sub-section">
+        <div class="card">
+          <div class="card-title">Kitchen Sink — Repair and Maintenance</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Same basics as bathroom:</strong> Kitchen faucet repairs use the same cartridge/ball valve techniques as residential plumbing. The main difference is space constraints — RV kitchens are tight. Take photos of the under-sink plumbing before disassembly.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Kitchen aerator clogs:</strong> Kitchen aerators clog more than any other fixture — food particles and sediment from fresh water tank. Clean or replace the aerator first on any low-flow complaint at the kitchen sink.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Pull-out spray head leaks:</strong> Many RV kitchens have pull-out spray head faucets. The supply hose inside the faucet body kinks and develops pinhole leaks inside the cabinet. Inspect the hose under the sink — drips from below indicate a hose leak not a fitting leak.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Slow drain:</strong> Grease and food debris in the drain line — not just the P-trap. Use enzyme drain cleaner. Avoid harsh chemical drain cleaners in RV plumbing — they can damage the plastic PEX lines and tank sensors. Mechanical drain snake is the safest approach for serious clogs.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>SharkBite fittings:</strong> For kitchen plumbing repairs in tight spaces, SharkBite push-to-connect fittings make line repairs much easier than soldering or crimping. They work on PEX, copper, and CPVC — which covers most RV plumbing materials.</div></div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+kitchen+sink+faucet+repair+drain+repair" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Kitchen Sink and Faucet Repair</div></div>
+        </a>
+      </div>
+
+      <!-- SHOWER -->
+      <div id="interior-shower" class="sub-section">
+        <div class="card">
+          <div class="card-title">RV Shower — Common Issues and Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Low shower pressure:</strong> Clean the showerhead — remove the head, soak in vinegar to dissolve mineral deposits, clean the screen. A clogged showerhead is the most common cause of low shower pressure and takes 5 minutes to fix.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Inconsistent hot/cold:</strong> Water pump pulsing during shower causes temperature fluctuations. Check accumulator tank — if installed, verify it is properly pressurized (should have 30 PSI air charge). If no accumulator is installed — adding one is an excellent upgrade that eliminates this issue.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Shower pan leaks:</strong> Inspect caulk around the shower pan perimeter and at the seam between pan and walls. This is a common water damage source in RVs. Remove old caulk completely, dry thoroughly, apply new 100% silicone caulk. Allow 24 hours cure before use.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Shower door/curtain track:</strong> Shower door tracks accumulate mold and soap scum in the bottom channel. Clean with mold-killing cleaner and a detail brush. Check rollers on sliding doors — worn rollers allow door to jump the track and are inexpensive to replace.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Water drains slowly:</strong> Hair accumulation at the drain strainer is most common. Clean strainer. If still slow — gray tank may be full or valve closed. Check gray tank level and ensure gray valve is open. Also check that roof vent pipe above the shower drain is not blocked.</div></div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+shower+repair+low+pressure+pan+leak+caulk" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Shower Repair — Pressure, Leaks and Drain</div></div>
+        </a>
+      </div>
+
+      <!-- BATHROOM VENT FAN -->
+      <div id="interior-bathfan" class="sub-section">
+        <div class="card">
+          <div class="card-title">Bathroom Vent Fan — Diagnosis and Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Fan won't run:</strong> Bathroom vent fans run on 12V DC. Check 12V fuse panel for a blown vent fan fuse. Check that the switch wiring connections at the fan are secure — vibration loosens crimp connectors in RV vent fans frequently.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Motor replacement:</strong> Most RV bathroom fans use a standard 12V brushless motor that is replaceable without replacing the entire unit. Common replacement motors are available from Ventline, Dometic, and Fan-Tastic — measure the motor diameter and voltage before ordering.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Fan makes noise but weak airflow:</strong> Debris in the fan blade — leaves, insects, and dust accumulate on fan blades reducing airflow. Remove roof vent cover and clean fan blade. Also check that the damper flap opens freely — a stuck damper severely restricts airflow.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Vent cover cracks:</strong> Plastic vent covers crack from UV exposure after several years. A cracked cover is a water intrusion point. Replacement covers are inexpensive and install with 4 screws — reseal with self-leveling Dicor around the base after installation.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Lid won't open or close:</strong> The lid mechanism uses a small gear or cam and spring. These crack from UV exposure. Replacement kits for most brands are available. Ventline and Dometic are the most common RV bathroom vent brands — identify the brand from the unit label before ordering parts.</div></div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+bathroom+vent+fan+repair+motor+replacement" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Bathroom Vent Fan Motor Replacement</div></div>
+        </a>
+      </div>
+
+      <!-- TOILET -->
+      <div id="interior-toilet" class="sub-section">
+        <div class="card">
+          <div class="card-title">RV Toilet — Repair and Maintenance</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Common brands:</strong> Thetford, Dometic (formerly SeaLand), and Sealand are the most common. Know the brand before ordering parts — seal kits and valve kits are brand and model specific.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Sewer odors in coach:</strong> The #1 cause is a dried or damaged floor seal (also called a base seal or closet seal). This rubber seal sits between the toilet base and the floor connection to the black tank. When it dries out or cracks — sewer gas enters freely. Replace the floor seal every 2–3 years as preventive maintenance.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Toilet won't hold water in bowl:</strong> Blade valve seal failure — the rubber seal around the toilet's ball or blade valve is worn. Thetford and Dometic both sell seal/valve rebuild kits for around $15–$25. Drain the system, remove toilet, replace seal kit.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Water constantly running into bowl:</strong> Water valve on the toilet is not seating properly — debris or wear preventing the valve from closing fully. Disassemble the water valve, clean or replace the seal. Thetford part #34120 fits many models.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Pump cycling intermittently with no faucets running:</strong> The toilet water valve is the most common hidden leak causing the pump to cycle when all faucets are off. Press the pedal slightly — if water seeps into the bowl — the valve seal has failed.</div></div>
+          <div class="info-box">💡 Toilet seal and valve kits are an excellent part to carry in stock on the truck. They are inexpensive, small, and toilet seal failure is one of the most common odor complaints you will get on any service call.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+toilet+seal+repair+valve+kit+Thetford+Dometic" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Toilet Seal and Valve Repair — Thetford Dometic</div></div>
+        </a>
+      </div>
+
+      <!-- TOILET WATER LINES -->
+      <div id="interior-toiletlines" class="sub-section">
+        <div class="card">
+          <div class="card-title">Toilet Water Supply Lines — Diagnosis and Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Supply line leak:</strong> The water line connecting to the toilet is either a flexible braided line or a PEX line with a push-fit or compression fitting. Inspect the connection at the toilet valve and at the wall fitting for drips. Hand tighten first — many leaks stop with simple tightening.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Shutoff valve before toilet:</strong> Many RV toilets have a shutoff valve on the supply line — often a 1/4 turn ball valve. If valve is partially closed it restricts flow. Ensure it is fully open. If the valve leaks at the stem or body — replace it with a 1/2" PEX ball valve.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Freeze damage:</strong> Supply lines in the bathroom that run through unheated spaces are vulnerable to freeze damage in Maine winters. After first freeze — inspect the entire supply line run from pump to toilet before pressurizing the system. Even a pinhole crack floods quickly under pump pressure.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>PEX line repair:</strong> Most RV plumbing uses PEX tubing. SharkBite push-to-connect fittings allow fast, reliable repairs without special tools in tight spaces. Cut out the damaged section cleanly with a pipe cutter, deburr, push in SharkBite fittings and coupling.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Water hammer at toilet flush:</strong> Rapid valve operation causes pressure spike — water hammer noise. An accumulator tank on the system reduces water hammer significantly. Also check that all supply line support clips are in place and lines are not vibrating against cabinet walls.</div></div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+toilet+water+supply+line+repair+PEX+leak" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Toilet Water Supply Line Repair</div></div>
+        </a>
+      </div>
+
+      <!-- WATER PUMP -->
+      <div id="interior-waterpump" class="sub-section">
+        <div class="card">
+          <div class="card-title">RV Water Pump — Diagnosis and Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Won't run:</strong> Check 12V fuse for pump in fuse panel first. Verify battery voltage is above 11.5V. Check pump switch is on. Verify winterizing selector valve is in the TANK position — not winterize. This catches a significant number of "pump not working" calls after spring startup.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Pump runs but no water:</strong> Tank may be empty — verify water level. Strainer on pump inlet may be clogged — clean strainer screen. Pump may need priming — open a faucet, turn pump on, let it run until water flows. Check that no air leak exists on the inlet side.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Pump cycles when no faucets are open:</strong> There is a leak somewhere in the system. Isolate by capping the pump outlet directly — if it still cycles, the leak is internal to the pump. If cycling stops — the leak is downstream. Toilet valve and water heater T&P valve are the most common hidden leak sources.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Pulsing water flow:</strong> Caused by air in the lines, a failing pump diaphragm, or the absence of an accumulator tank. Check all fittings for air intrusion. If diaphragm is worn — rebuild kit or replacement pump needed. Installing an accumulator tank is the best long-term fix for minor pulsing.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Noisy pump vibration:</strong> Factory-installed pumps are often mounted directly to the floor without isolation. Remove pump, add rubber or felt isolation pad under the pump body and between mounting screws and pump. This eliminates most pump noise complaints without replacing the pump.</div></div>
+          <div class="tip"><div class="tip-icon">6</div><div class="tip-text"><strong>Pump replacement:</strong> Most RV pumps are 12V diaphragm pumps (Shurflo, Flojet, Aquajet). Match the GPM and PSI rating of the original. Standard connections are 1/2" barb fittings. Use Teflon tape on all threaded connections, hose clamps on all barb connections.</div></div>
+          <div class="success-box">✓ Carrying a replacement Shurflo 4008 (3.0 GPM, 55 PSI) or equivalent on the truck covers the majority of standard RV pump replacements. It is the most common replacement pump in the industry.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Pump Troubleshooting Quick Reference</div>
+          <table>
+            <tr><th>Symptom</th><th>Most Likely Cause</th></tr>
+            <tr><td>Won't run at all</td><td class="val">Blown fuse, dead battery, or winterize valve position</td></tr>
+            <tr><td>Runs but no water</td><td class="val">Empty tank, clogged strainer, or needs priming</td></tr>
+            <tr><td>Cycles with no faucets open</td><td class="val">System leak — check toilet valve first</td></tr>
+            <tr><td>Pulsing water flow</td><td class="val">Air in lines or failed diaphragm</td></tr>
+            <tr><td>Loud vibration</td><td class="val">No isolation mounts — add rubber pad</td></tr>
+            <tr><td>Low pressure overall</td><td class="val">Clogged aerators, strainer, or worn pump</td></tr>
+          </table>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+water+pump+troubleshoot+replace+Shurflo+not+working" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Water Pump Troubleshoot and Replacement</div></div>
+        </a>
+      </div>
+
+    </div><!-- end content -->
+  </div><!-- end interior cat -->
+
+  <!-- ═══ ELECTRICAL CATEGORY ═══ -->
+  <div id="cat-electrical" class="cat-section">
+    <div class="sub-nav">
+      <div class="sub-tabs">
+        <button class="sub-tab active" onclick="showSub('elec','battery',this)">Coach Batteries</button>
+        <button class="sub-tab" onclick="showSub('elec','intlights',this)">Interior Lights</button>
+        <button class="sub-tab" onclick="showSub('elec','converter',this)">Converter</button>
+        <button class="sub-tab" onclick="showSub('elec','inverter',this)">Inverter</button>
+        <button class="sub-tab" onclick="showSub('elec','receptacles',this)">Interior Receptacles</button>
+        <button class="sub-tab" onclick="showSub('elec','gfci',this)">GFCI Receptacles</button>
+        <button class="sub-tab" onclick="showSub('elec','smoke',this)">Smoke Detectors</button>
+        <button class="sub-tab" onclick="showSub('elec','codet',this)">CO Detectors</button>
+        <button class="sub-tab" onclick="showSub('elec','lpdet',this)">LP Gas Detector</button>
+        <button class="sub-tab" onclick="showSub('elec','shorecord',this)">Shore Power Cord</button>
+        <button class="sub-tab" onclick="showSub('elec','solar',this)">Solar</button>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- COACH BATTERIES -->
+      <div id="elec-battery" class="sub-section active">
+        <div class="card">
+          <div class="card-title">Battery Types — Know What You Are Working With</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Flooded lead-acid (FLA):</strong> Most common on older units. Requires distilled water top-up every 30 days. Check water level at fill caps — should touch bottom of fill well, not overfilled. Produces hydrogen gas during charging — requires ventilation. Most affordable but most maintenance.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>AGM (Absorbed Glass Mat):</strong> Sealed, maintenance-free, no water to add. Handles vibration better than FLA. More expensive but widely used on newer units. Requires an AGM-compatible charger/converter — standard converter settings can damage AGM over time.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>LiFePO4 (Lithium):</strong> Increasingly common on new units and upgrades. No maintenance, much lighter, vastly more usable capacity. Requires a lithium-compatible charger — standard converters may not charge properly. Cannot be charged below 32°F without a self-heating model.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>6V vs 12V wiring:</strong> Two 6V batteries wired in series (+ to −) = 12V system with doubled capacity. Two 12V batteries wired in parallel (+ to +, − to −) = 12V system with doubled capacity. Always draw from opposite ends of a battery bank for balanced discharge.</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Battery Voltage Quick Reference</div>
+          <table>
+            <tr><th>State of Charge</th><th>Lead-Acid / AGM</th><th>LiFePO4</th></tr>
+            <tr><td>100% — Fully charged</td><td class="val">12.7V</td><td class="val">13.4V</td></tr>
+            <tr><td>75%</td><td class="val">12.4V</td><td class="val">13.3V</td></tr>
+            <tr><td>50%</td><td class="val">12.2V</td><td class="val">13.2V</td></tr>
+            <tr><td>25%</td><td class="val">12.0V</td><td class="val">13.0V</td></tr>
+            <tr><td>Discharged — Do not use</td><td class="val">Below 11.9V</td><td class="val">Below 12.0V</td></tr>
+            <tr><td>Converter charging output</td><td class="val">13.2–14.4V at terminals</td><td class="val">14.2–14.6V at terminals</td></tr>
+          </table>
+          <p class="note">Always measure voltage under a small load (lights on, not plugged in) for accurate state of charge reading. Voltage measured while plugged in will always show high regardless of battery condition.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">Battery Diagnosis and Maintenance</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Load test:</strong> Voltage alone doesn't tell the full story — a battery can show 12.6V but fail under load. Most auto parts stores load test for free. For deep cycle batteries, a dedicated deep cycle load tester gives more accurate results than a standard automotive tester.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Terminal corrosion:</strong> White or blue-green buildup on terminals causes resistance and voltage drop. Clean with baking soda and water solution, rinse, dry, apply dielectric grease or terminal protector spray after cleaning.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Battery disconnect switch:</strong> If 12V items don't work but battery is good — check that the battery disconnect switch is in the ON position. This is the #1 overlooked item on spring startup calls and after storage.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Parasitic drain test:</strong> If battery drains overnight with nothing running — connect a multimeter in series with the negative battery cable (current mode). More than 50mA draw with everything off indicates a parasitic drain. Pull fuses one at a time until draw drops to find the circuit.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Storage:</strong> Flooded and AGM batteries self-discharge at 3–5% per month. Use a smart battery maintainer during storage. LiFePO4 self-discharges less than 2% per month and can be stored at 50% SOC for long periods without harm.</div></div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+coach+battery+maintenance+test+replace+6V+12V" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Coach Battery Testing, Maintenance and Replacement</div></div>
+        </a>
+      </div>
+
+      <!-- INTERIOR LIGHTS -->
+      <div id="elec-intlights" class="sub-section">
+        <div class="card">
+          <div class="card-title">Interior Coach Lights — Diagnosis and Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>All lights out:</strong> Check 12V battery voltage and disconnect switch. Check 12V fuse panel — interior lighting usually has one or more dedicated fuses. If on shore power and lights still out — check converter output voltage at battery terminals (should be 13.2–14.4V).</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Dim or flickering lights:</strong> Usually indicates low battery voltage or a failing converter. If lights are bright when plugged in but dim off-grid — battery is weak. If dim even when plugged in — converter output is low. Test converter output at battery terminals with multimeter.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Individual light out:</strong> Check the bulb first — incandescent and fluorescent bulbs fail regularly. LED replacements are direct drop-in for most RV fixtures and last dramatically longer. Check for 12V at the fixture with multimeter if bulb checks out good.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>LED upgrade:</strong> Most RV interior fixtures use standard automotive bulb bases (1141, 1156, 194, etc.) or G4 pins. LED retrofits are available for all common types. Draw is 80–90% less than incandescent — a worthwhile upgrade for any customer doing regular boondocking.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Switch failure:</strong> RV wall switches are typically 12V DC toggle switches. Test for voltage on both sides of the switch with multimeter. If voltage on the input side but not the output when switched on — switch has failed. Standard 12V automotive switches are direct replacements.</div></div>
+          <div class="info-box">💡 Wire colors in RV lighting are NOT always consistent between manufacturers. Always test with a multimeter before assuming which wire is positive and which is negative. Using a test light on 12V circuits is fast and reliable.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+interior+lights+not+working+repair+LED+upgrade+12V" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Interior Lights Repair and LED Upgrade</div></div>
+        </a>
+      </div>
+
+      <!-- CONVERTER -->
+      <div id="elec-converter" class="sub-section">
+        <div class="card">
+          <div class="card-title">Converter — What It Does and How to Test It</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>What it does:</strong> Converts 120V AC shore power to 12V DC. Powers all 12V systems when plugged in AND charges the coach batteries. Without a working converter — 12V systems only run until the battery is depleted even when plugged into shore power.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Common brands:</strong> WFCO, Progressive Dynamics (PD), Parallax, Magnetek/Newmar. Most modern units are combination converter/chargers with 3 or 4 stage charging. Older units may be single-stage which can overcharge batteries left connected long-term.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Testing output:</strong> With RV plugged into shore power — measure voltage at battery terminals with multimeter. Should read 13.2–14.4V. If still reading battery resting voltage (12.6V or lower) — converter is not charging. Check AC breaker for converter and the large reverse-polarity DC fuse (usually 30–40A) on the converter itself first.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Converter fan running constantly or loudly:</strong> Normal for converter to have a cooling fan but a fan running continuously at high speed means converter is working hard. Check for excessive current draw, poor ventilation, or a battery that will not accept a charge (bad cell drawing high current).</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Replacement:</strong> WFCO 8900 series and Progressive Dynamics PD4000 series are the most common direct replacements. Match amperage output to original (45A, 55A, 75A are common sizes). Larger converters charge faster and handle more simultaneous 12V loads.</div></div>
+          <div class="warn-box">⚠ A weak or failing battery can mimic converter failure — battery draws excessive current trying to recover and causes low output voltage. Always verify battery health before condemning the converter.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+converter+not+charging+battery+WFCO+Progressive+Dynamics+repair" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Converter Not Charging — Diagnosis and Replacement</div></div>
+        </a>
+      </div>
+
+      <!-- INVERTER -->
+      <div id="elec-inverter" class="sub-section">
+        <div class="card">
+          <div class="card-title">Inverter — Diagnosis and Troubleshooting</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>What it does:</strong> The opposite of a converter — converts 12V DC battery power into 120V AC. Allows running AC appliances (microwave, TV, outlets) when NOT connected to shore power. Draws heavily from batteries — a 1000W inverter draws about 90A from 12V batteries.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Inverter/charger combo:</strong> Many motorhomes have a combined inverter/charger (Xantrex, Magnum, Victron). This single unit acts as both inverter (off-grid) and battery charger (on shore power). Failure affects both functions simultaneously.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>No output when on battery:</strong> Check battery voltage first — inverters have a low-voltage cutoff (typically 10.5–11V) to protect batteries. Below cutoff the inverter shuts down. Charge batteries first. Also check the large DC fuse or breaker between batteries and inverter — these are high-amperage (typically 100–400A ANL fuse).</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Error codes and fault lights:</strong> Most inverters display fault codes or flash error patterns. Consult the brand-specific manual before replacing components. Common faults: overload (too much load), overtemp (needs cooling), low battery, or internal fault.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Overload trips:</strong> High-draw appliances — hair dryers, electric heaters, microwaves, AC units — can exceed the inverter's rated wattage and trip overload protection. Check the inverter's watt rating against what is plugged in. A 1000W inverter cannot run a 1500W hair dryer.</div></div>
+          <div class="danger-box">⛔ Never work on inverter wiring without disconnecting from shore power AND the battery bank. Inverters store charge in capacitors that remain dangerous even after power is removed. If you smell burning or see smoke — disconnect immediately and do not reconnect until professionally inspected.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+inverter+not+working+troubleshoot+Xantrex+Magnum+repair" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Inverter Troubleshooting and Repair</div></div>
+        </a>
+      </div>
+
+      <!-- INTERIOR RECEPTACLES -->
+      <div id="elec-receptacles" class="sub-section">
+        <div class="card">
+          <div class="card-title">Interior 120V Receptacles — Diagnosis</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>No power at outlet — first steps:</strong> Check the AC breaker panel — a tripped breaker may look fine but be in the middle position. Flip all breakers fully OFF then back ON to reset. Then check all GFCI outlets — interior outlets are often downstream of a GFCI in the bathroom or kitchen.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Test with multimeter:</strong> Should read approximately 120V AC between hot and neutral. If zero voltage — check breaker and GFCI. If reading 60V — could be a floating neutral or open neutral — this requires professional diagnosis as it can damage appliances.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Outlet tester:</strong> A $7 outlet tester (3-light type) identifies wiring faults instantly — open ground, reversed polarity, open hot, open neutral. Essential tool to carry on every electrical service call. Plug it in and read the light pattern.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Replacing an outlet:</strong> Disconnect from shore power before opening any outlet box. Most RV outlets use standard 15A or 20A residential outlets. Pigtail connections are common in RV outlet boxes — one outlet can feed the next downstream. Identify all wires and document before disconnecting.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Outlet warm to the touch:</strong> A warm outlet indicates a loose connection arcing internally — serious fire hazard. Disconnect shore power immediately, open the outlet box, identify and repair the loose connection. Never ignore a warm outlet.</div></div>
+          <div class="warn-box">⚠ Always disconnect from shore power AND verify no power with a multimeter or non-contact voltage tester before opening any outlet or switch box. 120V AC can kill. Verify twice before touching wires.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+interior+outlet+not+working+repair+replace+receptacle" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Interior Outlet Not Working — Diagnosis and Repair</div></div>
+        </a>
+      </div>
+
+      <!-- GFCI -->
+      <div id="elec-gfci" class="sub-section">
+        <div class="card">
+          <div class="card-title">GFCI Receptacles — Diagnosis and Replacement</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>What GFCI protects:</strong> Detects current imbalance of as little as 5mA between hot and neutral — indicating current is flowing through a person or to ground. Trips in about 1/40 of a second. Required in bathrooms, kitchens, exterior locations, and any outlet near water.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Daisy-chain effect:</strong> One GFCI outlet can protect multiple downstream outlets on the same circuit. If any outlet in the RV loses power — finding and resetting the GFCI that feeds it is always the first step. Map your GFCI circuits by tripping each one and noting which outlets lose power.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div name="tip-icon">3</div><div class="tip-text"><strong>GFCI keeps tripping:</strong> Most common cause is moisture — inside the outlet box itself from rain or condensation. Remove the cover plate and allow to dry completely, inspect for signs of water. If moisture is present on an exterior outlet — replace the weatherproof cover gasket.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Converter and water heater elements:</strong> The converter and electric water heater element are common sources of current leakage that trip campground GFCI pedestals. To isolate — trip the breakers for those items inside the RV one at a time while plugged in. When the pedestal GFCI stops tripping — you found the leaky appliance.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>GFCI replacement:</strong> Use a weatherproof-rated GFCI for any exterior or bathroom location. Must be rated 15A or 20A to match the circuit. Always connect the LINE side (from breaker) and LOAD side (to downstream outlets) correctly — reversed connection defeats the protection on downstream outlets.</div></div>
+          <div class="info-box">💡 GFCI outlets have a finite lifespan — typically 10–15 years. A GFCI that tests OK with the test button but won't reset or trips for no apparent reason is simply at end of life. Replacement is inexpensive and fast.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+GFCI+outlet+tripping+replacement+troubleshoot" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV GFCI Outlet Troubleshooting and Replacement</div></div>
+        </a>
+      </div>
+
+      <!-- SMOKE DETECTORS -->
+      <div id="elec-smoke" class="sub-section">
+        <div class="card">
+          <div class="card-title">Smoke Detectors — Maintenance and Replacement</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Power source:</strong> RV smoke detectors are almost always battery-powered (9V) — not hardwired to 12V like LP and CO detectors. Check and replace the battery annually or when the unit chirps a low battery warning.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Lifespan:</strong> Smoke detectors have an expiration date printed on the unit — typically 8–10 years from manufacture. Replace the entire unit at expiration regardless of whether it appears to function. The sensor degrades over time.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>False alarms from cooking:</strong> Smoke detectors in RV kitchens are frequently triggered by cooking steam and smoke — the kitchen is extremely close to the detector. This is a normal RV experience. Covering the detector while cooking (with a bag or cover) is common but advise customers to uncover immediately after.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Testing:</strong> Push the test button monthly. The test button only tests the electronics — not the sensor's ability to detect smoke. Dedicated smoke aerosol spray (available at hardware stores) tests the actual sensor. Test with aerosol annually.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Cleaning:</strong> Dust accumulation inside the detection chamber causes false alarms. Vacuum the detector vents gently with a soft brush attachment annually. Do not use aerosol sprays (hairspray, cooking spray, cleaners) near smoke detectors.</div></div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+smoke+detector+replace+test+battery" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Smoke Detector Replacement and Testing</div></div>
+        </a>
+      </div>
+
+      <!-- CO DETECTOR -->
+      <div id="elec-codet" class="sub-section">
+        <div class="card">
+          <div class="card-title">Carbon Monoxide (CO) Detector — Critical Safety Information</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Why CO is deadly:</strong> Colorless, odorless gas from incomplete combustion of propane, gasoline, and diesel. Produced by the furnace, water heater, generator, and any nearby idling engines. Displaces oxygen in the bloodstream — symptoms (headache, dizziness, nausea) mimic the flu. Victims often die in their sleep.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Power source:</strong> RV CO detectors are hardwired to the 12V DC system — not battery powered. They remain active even with the battery disconnect on because they are usually wired directly to the battery. Disconnecting the battery disables the detector — a critical safety issue during storage.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Placement:</strong> CO is slightly lighter than air and disperses evenly — mount at breathing height (4–5 feet from floor) near sleeping areas. Combination CO/LP units should be mounted low (LP sinks) — follow manufacturer's placement instructions.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Lifespan:</strong> CO sensor degrades over time — typically 5–7 years for combination units. End-of-life units enter a warning mode (intermittent chirp every 30–60 seconds) that cannot be stopped — the unit must be replaced. Check manufacture date on the back of every unit you inspect.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>RVs built before 2005:</strong> Not required to have a CO detector from the factory. Any pre-2005 RV that does not have a CO detector should have one installed immediately — recommend this on every inspection.</div></div>
+          <div class="danger-box">⛔ If CO alarm sounds: Get everyone out immediately. Do not stop to investigate. Call 911. Do not re-enter until cleared by emergency services. CO poisoning can incapacitate before the victim realizes the danger.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+carbon+monoxide+detector+replace+install+safety" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Carbon Monoxide Detector Replacement and Safety</div></div>
+        </a>
+      </div>
+
+      <!-- LP GAS DETECTOR -->
+      <div id="elec-lpdet" class="sub-section">
+        <div class="card">
+          <div class="card-title">LP Gas Detector — Diagnosis and Replacement</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>Placement — critical difference from CO:</strong> Propane is heavier than air — it sinks to the floor. LP detectors must be mounted within 12–18 inches of the floor. Never mount LP detectors near the ceiling — they will not detect a propane leak until the room is heavily saturated.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Power:</strong> Hardwired to 12V DC — typically stays live even through the battery disconnect switch. This is intentional — the LP detector must function any time propane is present in the RV, including when the battery disconnect is engaged.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>End-of-life warning vs active leak:</strong> EOL warning = slow intermittent chirp every 30–60 seconds, often with a specific LED flash pattern. Active leak = loud continuous alarm. Distinguish these carefully — an EOL warning in the middle of the night alarms customers but is NOT a gas leak emergency. Check manufacture date first.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Lifespan:</strong> 5–7 years from manufacture date. The date is printed on the back or side of the unit. An expired unit must be replaced — the sensor loses accuracy and may fail to detect an actual leak.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>False alarms from cleaning products:</strong> Many household cleaners, aerosol sprays, and even some cooking oils trigger LP detectors. If customer reports random false alarms — ask about cleaning products used recently. Thoroughly ventilate the RV before concluding the detector is faulty.</div></div>
+          <div class="tip"><div class="tip-icon">6</div><div class="tip-text"><strong>Replacement:</strong> Safe-T-Alert (MTI Industries) and RV Safe are the two major brands. Match the footprint of the old unit or use a trim ring to cover the gap. Always buy a 12V DC hardwired unit — never a battery-powered or 120V household unit for RV use.</div></div>
+          <div class="info-box">💡 Recommending a combination LP/CO detector (Safe-T-Alert 35 series or equivalent) is the professional choice — covers both hazards in one unit, one installation, one wire connection. An excellent and inexpensive upsell on any service call.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+LP+propane+gas+detector+replace+end+of+life+Safe-T-Alert" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV LP Gas Detector End of Life and Replacement</div></div>
+        </a>
+      </div>
+
+      <!-- SHORE POWER CORD -->
+      <div id="elec-shorecord" class="sub-section">
+        <div class="card">
+          <div class="card-title">Shore Power Cord — Inspection and Repair</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>30A vs 50A:</strong> 30A cord has 3 prongs (2 hot + 1 neutral). 50A cord has 4 prongs (2 hot + 1 neutral + 1 ground). Never use a 50A RV on a 30A service without a proper 30A→50A adapter — running on 30A limits available power and you cannot run two AC units simultaneously. Opposite direction (50A on 30A service) requires a 50A→30A dogbone adapter.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>Inspect before every use:</strong> Check both the male plug end (going to pedestal) and female receptacle end (going to RV) for bent or burnt prongs, melted plastic, cracked insulation, or signs of overheating. A damaged cord is a serious fire hazard — replace immediately.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Plug replacement:</strong> If only the plug end is damaged — you do not need to replace the entire cord. Cut off the damaged end. Buy a replacement 30A or 50A male plug. Follow the instructions included with the plug for proper wire length and connection sequence. Match wire gauge to the cord.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>Hot or loose connection at pedestal:</strong> If the cord feels warm where it connects to the pedestal — the pedestal receptacle is worn and has poor contact. Report to campground management immediately — do not continue using. A loose or worn pedestal connection generates heat and can cause a fire.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Surge protector:</strong> Every RV should use a quality surge protector/EMS (electrical management system) between the pedestal and the RV cord. Campground power quality varies significantly — low voltage, reverse polarity, and power surges can damage the converter, appliances, and wiring. EMS devices disconnect power if conditions are unsafe.</div></div>
+          <div class="success-box">✓ Pro tip: Surge protectors/EMS devices are an excellent upsell on every shore power call. Progressive Industries and Hughes Autoformers make the most respected units. A $150–$300 EMS protects thousands of dollars of RV electrical components.</div>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+shore+power+cord+plug+repair+replace+surge+protector" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Shore Power Cord Repair and Surge Protection</div></div>
+        </a>
+      </div>
+
+      <!-- SOLAR -->
+      <div id="elec-solar" class="sub-section">
+        <div class="card">
+          <div class="card-title">RV Solar System — Components and Troubleshooting</div>
+          <div class="tip"><div class="tip-icon">1</div><div class="tip-text"><strong>System components:</strong> Solar panels → charge controller → battery bank → (optional) inverter. The charge controller is the brain — it manages charging current, prevents overcharge, and often displays system data. A faulty charge controller is the most common solar system failure.</div></div>
+          <div class="tip"><div class="tip-icon">2</div><div class="tip-text"><strong>No charging from solar:</strong> Check charge controller display first — most modern MPPT controllers have a display showing panel input voltage, battery voltage, and charge current. No panel input voltage = panel wiring issue or panels shaded/dirty. Input voltage present but no charge current = controller or battery issue.</div></div>
+          <div class="tip"><div class="tip-icon">3</div><div class="tip-text"><strong>Panel voltage check:</strong> Disconnect panels from controller. Measure open-circuit voltage (Voc) across the panel terminals in full sun — should be close to the rated Voc on the panel label (typically 18–22V for a 100W 12V panel). Significantly lower voltage = shading, dirty panel, or damaged panel.</div></div>
+          <div class="tip"><div class="tip-icon">4</div><div class="tip-text"><strong>MPPT vs PWM controllers:</strong> MPPT (Maximum Power Point Tracking) is the modern standard — more efficient, better for higher-voltage panel configurations. PWM (Pulse Width Modulation) is older and less efficient. They are NOT interchangeable — panel array voltage must match controller type.</div></div>
+          <div class="tip"><div class="tip-icon">5</div><div class="tip-text"><strong>Battery compatibility:</strong> Charge controller must be programmed for the battery type — flooded, AGM, or LiFePO4. Wrong charging profile damages batteries. If customer recently switched to lithium — verify the charge controller is set or capable of LiFePO4 charging profile.</div></div>
+          <div class="tip"><div class="tip-icon">6</div><div class="tip-text"><strong>Panel cleaning:</strong> A thin layer of dust, bird droppings, or pine pollen can reduce solar output by 20–30%. Clean panels with water and a soft cloth or sponge — no abrasives. In Maine's environment with pollen and tree debris, panels may need cleaning monthly during camping season.</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Solar Troubleshooting Quick Reference</div>
+          <table>
+            <tr><th>Symptom</th><th>Most Likely Cause</th></tr>
+            <tr><td>No panel voltage at controller</td><td class="val">Dirty panels, shading, wire connection, or blown fuse in panel circuit</td></tr>
+            <tr><td>Panel voltage present, no charge current</td><td class="val">Failed charge controller or battery full</td></tr>
+            <tr><td>Low charge current despite full sun</td><td class="val">Dirty panels, partial shade, or controller set for wrong battery type</td></tr>
+            <tr><td>Battery won't reach full charge</td><td class="val">Undersized panel array, bad battery, or wrong charge profile</td></tr>
+            <tr><td>Controller display blank</td><td class="val">Blown fuse between battery and controller or failed controller</td></tr>
+          </table>
+        </div>
+        <a href="https://www.youtube.com/results?search_query=RV+solar+panel+system+troubleshoot+charge+controller+not+charging" target="_blank" class="vid-link">
+          <div class="vid-icon">▶</div><div class="vid-info"><div class="vid-label">YouTube Search</div><div class="vid-title">RV Solar System Troubleshooting — Panels and Charge Controller</div></div>
+        </a>
+      </div>
+
+    </div><!-- end content -->
+  </div><!-- end electrical cat -->
+
+  <!-- MORE COMING SOON -->
+  <div id="cat-more" class="cat-section">
+    <div class="content">
+      <div class="coming-soon">
+        <div class="coming-soon-icon">🔧</div>
+        <h3>More Categories Coming Soon</h3>
+        <p>Additional repair categories will be added as the app grows.</p>
+        <div style="margin-top: 1.5rem; text-align: left;">
+          <div class="card">
+            <div class="card-title">What's Already in This App</div>
+            <table>
+              <tr><th>Category</th><th>Subtopics</th></tr>
+              <tr><td>🔺 Roof</td><td class="val">9 topics — Materials, Vents, Skylight, Satellite, WiFi, Antenna, Seams, Cracks, Ladder</td></tr>
+              <tr><td>🔧 Exterior</td><td class="val">21 topics — Propane, Electrical, Lights, Awnings, Sink, Grill, Jacks, Stabilizers, Steps, Tanks, Water</td></tr>
+              <tr><td>🛋️ Interior</td><td class="val">18 topics — Appliances, Climate, Plumbing, Toilet, Water Pump, Detectors</td></tr>
+              <tr><td>⚡ Electrical</td><td class="val">11 topics — Batteries, Lights, Converter, Inverter, Outlets, GFCI, Detectors, Solar</td></tr>
+            </table>
+            <p class="note">59 total subtopics with professional repair tips and YouTube reference links.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end app -->
+
+<script>
+  const CORRECT_PIN = '6569';
+  let currentPin = '';
+
+  function addPin(digit) {
+    if (currentPin.length >= 4) return;
+    currentPin += digit;
+    updateDots();
+    if (currentPin.length === 4) setTimeout(checkPin, 150);
+  }
+
+  function clearPin() {
+    currentPin = '';
+    updateDots(false);
+    document.getElementById('login-error').textContent = '';
+  }
+
+  function updateDots(error = false) {
+    for (let i = 0; i < 4; i++) {
+      const dot = document.getElementById('d' + i);
+      dot.classList.remove('filled', 'error');
+      if (error) dot.classList.add('error');
+      else if (i < currentPin.length) dot.classList.add('filled');
+    }
+  }
+
+  function checkPin() {
+    if (currentPin === CORRECT_PIN) {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+    } else {
+      updateDots(true);
+      document.getElementById('login-error').textContent = 'Incorrect PIN — try again';
+      setTimeout(() => { clearPin(); }, 1200);
+    }
+  }
+
+  function lockApp() {
+    currentPin = '';
+    updateDots();
+    document.getElementById('login-error').textContent = '';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+  }
+
+  function showCat(id, btn) {
+    document.querySelectorAll('.cat-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('cat-' + id).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  function showSub(cat, sub, btn) {
+    const catEl = document.getElementById('cat-' + cat);
+    catEl.querySelectorAll('.sub-section').forEach(s => s.classList.remove('active'));
+    catEl.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(cat + '-' + sub).classList.add('active');
+    btn.classList.add('active');
+  }
+</script>
+</body>
+</html>
